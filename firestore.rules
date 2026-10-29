@@ -1,0 +1,41 @@
+rules_version = '2';
+service cloud.firestore {
+  match /databases/{database}/documents {
+    function signedIn() { return request.auth != null; }
+    // Mantener esta lista igual a docentes en config.js
+    function isDocente() {
+      return signedIn() && request.auth.token.email_verified == true
+        && request.auth.token.email in ['agustinsekul@impatrq.com', 'aero.proyecto.s62@gmail.com'];
+    }
+    function isAlumno() {
+      return signedIn() && exists(/databases/$(database)/documents/usuarios/$(request.auth.uid))
+        && get(/databases/$(database)/documents/usuarios/$(request.auth.uid)).data.estado == 'aprobado';
+    }
+    function miembro() { return isDocente() || isAlumno(); }
+
+    // Alumnos: piden acceso la primera vez y el docente los acepta
+    match /usuarios/{uid} {
+      allow read: if isDocente() || (signedIn() && request.auth.uid == uid);
+      allow create: if signedIn() && request.auth.uid == uid
+        && request.resource.data.estado == 'pendiente'
+        && request.resource.data.email == request.auth.token.email;
+      allow update, delete: if isDocente();
+    }
+
+    // Registros de la carpeta de campo: los ven y cargan solo los miembros del proyecto
+    match /registros/{registro} {
+      allow read: if miembro();
+      allow create: if miembro() && request.resource.data.autorId == request.auth.uid
+        && request.resource.data.revisado == false;
+      // El autor puede completar sus fotos, pero solo el docente marca la revisión
+      allow update: if isDocente() || (miembro() && resource.data.autorId == request.auth.uid
+        && request.resource.data.revisado == resource.data.revisado);
+      allow delete: if isDocente() || (miembro() && resource.data.autorId == request.auth.uid && resource.data.revisado == false);
+    }
+
+    // Estado, pasos y grupo de cada tarea del cronograma (A a AB)
+    match /tareas/{tarea} {
+      allow read, write: if miembro();
+    }
+  }
+}

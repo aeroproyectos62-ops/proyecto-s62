@@ -1,0 +1,1090 @@
+<!doctype html>
+<html lang="es">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width,initial-scale=1,viewport-fit=cover">
+<title>Proyecto S62</title>
+<meta name="theme-color" content="#16202a">
+<link rel="manifest" href="manifest.json">
+<link rel="icon" href="icon.svg" type="image/svg+xml">
+<link rel="apple-touch-icon" href="icon-192.png">
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Barlow+Condensed:wght@600;700&family=Barlow:wght@400;500;600&family=IBM+Plex+Mono:wght@500&display=swap">
+<script src="https://cdnjs.cloudflare.com/ajax/libs/jspdf/2.5.1/jspdf.umd.min.js"></script>
+<script src="https://cdnjs.cloudflare.com/ajax/libs/jszip/3.10.1/jszip.min.js"></script>
+<script src="https://cdnjs.cloudflare.com/ajax/libs/xlsx/0.18.5/xlsx.full.min.js"></script>
+<style>
+/* Layout: misma columna de trabajo que Bitácora del Hangar (máx. 920px); inicio con puertas, ficha del helicóptero con menú de mosaicos y subpantallas debajo. */
+:root{
+  color-scheme:light;
+  --bg:#eceff3; --surface:#ffffff; --surface-2:#f5f7f9; --ink:#16202a; --muted:#5a6775; --line:#d2d9e0;
+  --accent:#d9531e; --accent-ink:#ffffff;
+  --ok:#1e7a4c; --ok-bg:#e3f3ea; --pend:#9a6412; --pend-bg:#fbefd8; --rep:#1c5ca3; --rep-bg:#e1ecf8; --stop:#c22626; --stop-bg:#fbe3e3;
+  --photo-a:#c9d2db; --photo-b:#aab6c2;
+  /* Colores de etapa del cronograma, iguales al PDF del proyecto (son los colores de la pintura) */
+  --st-gris:#8f98a3; --st-am:#F6C33B; --st-na:#F08A24; --st-ro:#D8262E; --st-bo:#7A1335; --st-az:#1D2A6B;
+  --display:"Barlow Condensed","Arial Narrow",Arial,sans-serif;
+  --body:"Barlow",system-ui,-apple-system,"Segoe UI",sans-serif;
+  --mono:"IBM Plex Mono",ui-monospace,Menlo,Consolas,monospace;
+  padding-top:env(safe-area-inset-top,0px);padding-bottom:env(safe-area-inset-bottom,0px);
+}
+@media (prefers-color-scheme:dark){:root{
+  --bg:#0e141a; --surface:#17202a; --surface-2:#1c2733; --ink:#e5ebf0; --muted:#93a1ae; --line:#2b3744;
+  --accent:#ff7b3f; --accent-ink:#1a0d06;
+  --ok:#52c48d; --ok-bg:#16302a; --pend:#e8ac45; --pend-bg:#33291a; --rep:#70aaf0; --rep-bg:#172a42; --stop:#ff6464; --stop-bg:#3a1a1d;
+  --photo-a:#2b3744; --photo-b:#3a4857;
+  color-scheme:dark}}
+*{box-sizing:border-box}
+[hidden]{display:none!important}
+body:not(.role-docente) .staff-only{display:none!important}
+body{margin:0;background:var(--bg);color:var(--ink);font-family:var(--body);font-size:16px;line-height:1.45}
+img{max-width:100%}
+.wrap{max-width:920px;margin:0 auto;padding-block:20px 48px;padding-left:max(16px,env(safe-area-inset-left,0px));padding-right:max(16px,env(safe-area-inset-right,0px));display:flex;flex-direction:column;gap:20px}
+.stack{display:flex;flex-direction:column;gap:20px}
+h1,h2,h3{font-family:var(--display);font-weight:700;letter-spacing:.01em;text-wrap:balance;margin:0;line-height:1.1}
+h1{font-size:2rem} h2{font-size:1.45rem} h3{font-size:1.1rem;letter-spacing:.04em;text-transform:uppercase;color:var(--muted)}
+.mono{font-family:var(--mono);font-variant-numeric:tabular-nums}
+.muted{color:var(--muted)} .small{font-size:.875rem}
+a{color:var(--accent)}
+.top{display:flex;flex-wrap:wrap;align-items:flex-end;justify-content:space-between;gap:12px}
+.brand small{display:block;font-family:var(--mono);font-size:.75rem;letter-spacing:.12em;text-transform:uppercase;color:var(--muted)}
+.who{display:flex;flex-direction:column;gap:4px;min-width:0}
+input,select,textarea{font:inherit;color:var(--ink);background:var(--surface);border:1px solid var(--line);border-radius:6px;padding:9px 11px;width:100%;min-width:0}
+textarea{min-height:84px;resize:vertical}
+input:focus-visible,select:focus-visible,textarea:focus-visible,button:focus-visible,a:focus-visible,label.photo-add:focus-within{outline:2px solid var(--accent);outline-offset:2px}
+button{font:inherit;font-weight:600;cursor:pointer;border-radius:6px;padding:9px 14px;border:1px solid var(--line);background:var(--surface);color:var(--ink)}
+button.primary{background:var(--accent);border-color:var(--accent);color:var(--accent-ink)}
+button.ghost{background:transparent}
+button.danger{color:var(--stop);border-color:var(--stop);background:transparent}
+button:disabled{opacity:.55;cursor:not-allowed}
+.panel{background:var(--surface);border:1px solid var(--line);border-radius:10px;padding:16px;display:flex;flex-direction:column;gap:12px;min-width:0}
+.row{display:flex;flex-wrap:wrap;gap:10px;align-items:center}
+.grid2{display:grid;grid-template-columns:repeat(auto-fit,minmax(200px,1fr));gap:10px}
+.grid3{display:grid;grid-template-columns:repeat(auto-fit,minmax(150px,1fr));gap:10px}
+.field{display:flex;flex-direction:column;gap:4px;min-width:0}
+.field label,.lbl{font-size:.8rem;font-weight:600;color:var(--muted)}
+.banner{border-radius:8px;padding:10px 14px;background:var(--pend-bg);color:var(--ink);border:1px solid var(--pend)}
+.note{font-size:.85rem;color:var(--muted);border-left:3px solid var(--line);padding-left:10px}
+.msg{font-size:.9rem;min-height:1.2em} .msg.err{color:var(--stop)} .msg.ok{color:var(--ok)}
+.saved{border-color:var(--ok);background:var(--ok-bg)}
+.empty{padding:28px 16px;text-align:center;color:var(--muted);border:1px dashed var(--line);border-radius:10px}
+.sync{font-size:.8rem;font-family:var(--mono);color:var(--pend)}
+
+/* Inicio */
+.start{display:flex;flex-direction:column;gap:16px;max-width:560px;width:100%;margin:0 auto;padding-top:12px}
+.doors{display:grid;grid-template-columns:repeat(auto-fit,minmax(200px,1fr));gap:12px}
+.door{display:flex;flex-direction:column;align-items:flex-start;gap:6px;text-align:left;padding:18px;border-radius:10px;border:1px solid var(--line);background:var(--surface)}
+.door b{font-family:var(--display);font-size:1.6rem;letter-spacing:.02em}
+.door span{font-weight:400;color:var(--muted);font-size:.95rem}
+
+/* Ficha y menú */
+.back{align-self:flex-start;text-decoration:none;font-weight:600}
+.head{display:flex;flex-wrap:wrap;justify-content:space-between;gap:12px;align-items:flex-start}
+.reg{font-family:var(--display);font-weight:700;font-size:2.6rem;letter-spacing:.04em;line-height:1}
+.chip{display:inline-flex;align-items:center;gap:6px;font-size:.78rem;font-weight:600;letter-spacing:.06em;text-transform:uppercase;padding:3px 8px;border-radius:4px;white-space:nowrap}
+.chip::before{content:"";width:7px;height:7px;border-radius:50%;background:currentColor}
+.c-tarea{color:var(--ok);background:var(--ok-bg)} .c-obs{color:var(--rep);background:var(--rep-bg)} .c-prob{color:var(--pend);background:var(--pend-bg)}
+.c-curso{color:var(--rep);background:var(--rep-bg)} .c-rev{color:var(--ok);background:var(--ok-bg)} .c-sinrev{color:var(--muted);background:var(--surface-2)}
+.stats{display:flex;flex-wrap:wrap;gap:4px 18px;font-size:.9rem;color:var(--muted)}
+.stats b{color:var(--ink);font-family:var(--mono);font-weight:500}
+.menu{display:grid;grid-template-columns:repeat(auto-fit,minmax(170px,1fr));gap:12px}
+.tile{display:flex;flex-direction:column;align-items:flex-start;gap:4px;text-align:left;padding:18px 16px;border-radius:10px;border:1px solid var(--line);background:var(--surface);min-height:96px}
+.tile b{font-family:var(--display);font-size:1.45rem;letter-spacing:.02em}
+.tile span{font-weight:400;color:var(--muted);font-size:.9rem}
+.tile:hover{border-color:var(--accent)}
+.tile.t-main{border-color:var(--accent);box-shadow:inset 0 0 0 1px var(--accent)}
+.tabs{display:flex;flex-wrap:wrap;gap:6px}
+.tabs button{border-radius:999px;padding:7px 14px}
+.tabs button[aria-pressed=true]{background:var(--ink);color:var(--bg);border-color:var(--ink)}
+
+/* Fotos */
+.photos{display:grid;grid-template-columns:repeat(auto-fill,minmax(110px,1fr));gap:8px}
+.ph{position:relative;display:block;aspect-ratio:4/3;max-width:100%;border-radius:6px;overflow:hidden;border:1px solid var(--line);background:repeating-linear-gradient(135deg,var(--photo-a) 0 10px,var(--photo-b) 10px 20px)}
+.ph img{width:100%;height:100%;object-fit:cover;display:block}
+.ph .cap{position:absolute;left:4px;bottom:4px;right:4px;font-size:.68rem;font-weight:600;letter-spacing:.05em;text-transform:uppercase;background:var(--surface);color:var(--ink);padding:2px 6px;border-radius:3px;white-space:nowrap;overflow:hidden;text-overflow:ellipsis}
+.ph .tag{position:absolute;top:4px;left:4px;font-size:.66rem;font-weight:600;letter-spacing:.06em;text-transform:uppercase;background:var(--ink);color:var(--bg);padding:1px 6px;border-radius:3px}
+.ph button.x{position:absolute;top:4px;right:4px;padding:0 7px;font-size:.8rem;line-height:1.5}
+.ph select{position:absolute;top:4px;left:4px;width:auto;padding:2px 4px;font-size:.72rem}
+label.photo-add{position:relative;display:flex;flex-direction:column;align-items:center;justify-content:center;gap:2px;aspect-ratio:4/3;max-width:100%;border:1px dashed var(--muted);border-radius:6px;cursor:pointer;color:var(--muted);font-weight:600;text-align:center;font-size:.9rem;padding:6px}
+label.photo-add input{position:absolute;opacity:0;width:1px;height:1px}
+label.photo-add b{font-family:var(--display);font-size:1.6rem;line-height:1;color:var(--accent)}
+
+/* Calendario */
+.calhead{display:flex;align-items:center;justify-content:space-between;gap:8px;max-width:420px}
+.calhead b{font-family:var(--display);font-size:1.25rem}
+.cal{display:grid;grid-template-columns:repeat(7,minmax(0,1fr));gap:4px;max-width:420px}
+.cal .dow{font-size:.72rem;letter-spacing:.06em;text-transform:uppercase;color:var(--muted);text-align:center}
+.cal .day{aspect-ratio:1/1;padding:0;display:flex;flex-direction:column;align-items:center;justify-content:center;font-family:var(--mono);font-weight:500;font-size:.85rem;background:var(--surface-2);border:1px solid transparent;border-radius:6px;min-width:0;color:var(--ink)}
+.cal .day small{font-size:.62rem;line-height:1}
+.cal .day.d-tarea{background:var(--ok);color:var(--surface)} .cal .day.d-obs{background:var(--rep);color:var(--surface)} .cal .day.d-prob{background:var(--pend);color:var(--surface)}
+.cal .day.today{border-color:var(--accent)} .cal .day.sel{outline:2px solid var(--ink);outline-offset:1px}
+.cal .day:disabled{opacity:1;cursor:default}
+.legend{display:flex;flex-wrap:wrap;gap:6px 14px;font-size:.8rem;color:var(--muted)}
+.legend i{display:inline-block;width:10px;height:10px;border-radius:3px;margin-right:5px;vertical-align:-1px}
+
+/* Registros */
+.log{display:flex;flex-direction:column}
+.entry{display:grid;grid-template-columns:auto 1fr;gap:4px 12px;padding:14px 0;border-top:1px solid var(--line)}
+.entry:first-child{border-top:0}
+.entry .when{font-family:var(--mono);font-size:.8rem;color:var(--muted);white-space:nowrap}
+.entry .body{min-width:0;display:flex;flex-direction:column;gap:6px}
+.entry p{margin:0;white-space:pre-wrap;overflow-wrap:anywhere}
+.kv{display:flex;flex-wrap:wrap;gap:2px 14px;font-size:.88rem}
+.kv span b{font-weight:600}
+.entry .photos{grid-template-columns:repeat(auto-fill,minmax(96px,1fr));max-width:420px}
+
+/* Por sistema */
+.sys{display:grid;grid-template-columns:repeat(auto-fill,minmax(240px,1fr));gap:12px}
+.sysc{display:flex;flex-direction:column;gap:6px;text-align:left;background:var(--surface);border:1px solid var(--line);border-radius:8px;padding:14px;min-width:0;font-weight:400}
+.sysc:hover{border-color:var(--muted)}
+.sysc b{font-family:var(--display);font-size:1.3rem;letter-spacing:.02em}
+.bar{height:6px;border-radius:3px;background:var(--surface-2);overflow:hidden;display:flex}
+.bar i{display:block;height:100%}
+
+/* Descarga */
+.zip{display:flex;flex-direction:column}
+.zrow{display:grid;grid-template-columns:1fr auto;gap:2px 12px;padding:10px 0;border-top:1px solid var(--line);min-width:0}
+.zrow:first-child{border-top:0}
+.zrow code{font-family:var(--mono);font-size:.85rem;overflow-wrap:anywhere}
+.zrow .sz{font-family:var(--mono);font-size:.85rem;color:var(--muted);white-space:nowrap}
+.zrow .d{grid-column:1/-1;font-size:.88rem;color:var(--muted)}
+.people{display:flex;flex-direction:column}
+.person{display:flex;flex-wrap:wrap;justify-content:space-between;gap:8px;align-items:center;padding:8px 0;border-top:1px solid var(--line)}
+.person:first-child{border-top:0}
+
+/* Tareas: etiqueta de etapa con el color del PDF */
+.et{display:inline-block;font-family:var(--mono);font-size:.72rem;font-weight:500;padding:1px 6px;border-radius:3px;color:#fff;white-space:nowrap;line-height:1.5}
+.et-gris{background:var(--st-gris)} .et-am{background:var(--st-am);color:#3a2a00} .et-na{background:var(--st-na);color:#2a1300}
+.et-ro{background:var(--st-ro)} .et-bo{background:var(--st-bo)} .et-az{background:var(--st-az)}
+.c-hecha{color:var(--ok);background:var(--ok-bg)} .c-encurso{color:var(--rep);background:var(--rep-bg)} .c-porhacer{color:var(--muted);background:var(--surface-2)}
+.c-atrasada{color:var(--stop);background:var(--stop-bg)} .c-espera{color:var(--pend);background:var(--pend-bg)}
+.crit{font-size:.7rem;font-weight:600;letter-spacing:.06em;text-transform:uppercase;color:var(--stop);border:1px solid var(--stop);border-radius:3px;padding:0 5px;white-space:nowrap}
+.wk{display:flex;flex-direction:column;gap:10px}
+.wkhead{display:flex;flex-wrap:wrap;align-items:baseline;gap:6px 14px}
+.wkhead .n{font-family:var(--display);font-weight:700;font-size:2.4rem;line-height:1}
+.task{display:grid;grid-template-columns:auto 1fr auto;gap:6px 12px;align-items:start;padding:12px;border:1px solid var(--line);border-radius:8px;background:var(--surface-2);text-align:left;font-weight:400;min-width:0;width:100%}
+.task:hover{border-color:var(--muted)}
+.task .tid{font-family:var(--mono);font-weight:500;font-size:.9rem;min-width:2ch}
+.task .tb{min-width:0;display:flex;flex-direction:column;gap:3px}
+.task .tb b{font-weight:600}
+.prog{height:6px;border-radius:3px;background:var(--line);overflow:hidden;max-width:220px}
+.prog i{display:block;height:100%;background:var(--ok)}
+.alerts{display:flex;flex-direction:column;gap:8px}
+.alert{border-radius:8px;padding:10px 12px;border:1px solid var(--line);border-left:5px solid var(--pend);background:var(--surface-2);font-size:.92rem}
+.alert.a-stop{border-left-color:var(--stop)}
+.ganttwrap{overflow-x:auto;min-width:0}
+.gantt{display:grid;grid-template-columns:minmax(170px,1.3fr) repeat(39,minmax(13px,1fr));min-width:720px;row-gap:5px;font-size:.82rem}
+.gantt .gl{padding-right:8px;align-self:center;color:var(--ink);line-height:1.2}
+.gantt .gm{font-family:var(--mono);font-size:.68rem;color:var(--muted);text-transform:lowercase;border-left:1px solid var(--line);padding-left:3px}
+.gantt .gbg{grid-column:2/-1;background:var(--surface-2);border-radius:3px;height:16px;align-self:center}
+.gantt .gbar{height:16px;align-self:center;border-radius:3px;cursor:pointer;border:0;padding:0}
+.gantt .gbar:focus-visible{outline:2px solid var(--ink);outline-offset:1px}
+.gantt .grec{background:repeating-linear-gradient(135deg,transparent 0 4px,var(--line) 4px 7px);align-self:stretch;border-radius:2px;pointer-events:none}
+.gantt .gnow{width:2px;background:var(--accent);justify-self:start;align-self:stretch;pointer-events:none;margin-left:50%}
+.gantt .gnowlbl{font-family:var(--mono);font-size:.66rem;color:var(--accent);white-space:nowrap}
+.gbar.done{opacity:.45}
+.wtable{display:flex;flex-direction:column}
+.wmonth{font-family:var(--display);font-weight:700;letter-spacing:.06em;text-transform:uppercase;font-size:1rem;color:var(--ink);padding:14px 0 6px;border-bottom:2px solid var(--ink)}
+.wrow{display:grid;grid-template-columns:2.4rem 6.6rem 3.6rem 1fr auto;gap:4px 10px;align-items:start;padding:9px 0;border:0;border-bottom:1px solid var(--line);text-align:left;background:transparent;border-radius:0;font-weight:400;width:100%;min-width:0}
+.wrow:hover{background:var(--surface-2)}
+.wrow.now{background:var(--rep-bg)}
+.wrow .sn{font-family:var(--mono);font-weight:500;color:var(--st-ro)}
+.wrow .sf{font-family:var(--mono);font-size:.82rem;color:var(--muted)}
+.wrow .sd{min-width:0;overflow-wrap:anywhere}
+.wrow.rec{background:repeating-linear-gradient(135deg,transparent 0 6px,var(--surface-2) 6px 12px);cursor:default}
+.buy{display:block;font-size:.8rem;color:var(--pend);font-weight:600;margin-top:2px}
+@media (max-width:640px){.wrow{grid-template-columns:2rem 1fr auto}.wrow .sf{grid-column:2}.wrow .se{grid-column:3;grid-row:1}.wrow .sd{grid-column:1/-1}.wrow .ss{grid-column:1/-1}}
+.steps{display:flex;flex-direction:column;gap:6px;margin:0;padding:0;list-style:none}
+.steps label{display:flex;gap:8px;align-items:flex-start}
+.steps input{width:20px;height:20px;flex:none;accent-color:var(--accent);margin-top:1px;padding:0}
+.deps{display:flex;flex-wrap:wrap;gap:6px}
+.deps button{padding:3px 10px;font-size:.85rem}
+@media (max-width:480px){.entry{grid-template-columns:1fr}.reg{font-size:2.1rem}}
+@media (prefers-reduced-motion:no-preference){button,.tile,.sysc{transition:border-color .15s,opacity .15s}}
+</style>
+</head>
+<body>
+<div class="wrap">
+  <header class="top">
+    <div class="brand"><small>EET N°7 Quilmes · Carpeta de campo</small><h1>Proyecto S62</h1></div>
+    <div class="who" id="who-box" hidden>
+      <span id="who-role" class="lbl">Alumno</span>
+      <div class="row" style="gap:8px"><b id="who-txt"></b><button type="button" id="logout" class="ghost small">Salir</button></div>
+      <span id="sync" class="sync" hidden></span>
+    </div>
+  </header>
+  <div id="banner" class="banner" hidden></div>
+
+  <!-- Inicio -->
+  <section id="view-start" class="start">
+    <h2>¿Cómo entrás?</h2>
+    <div class="doors">
+      <button type="button" class="door" data-role="alumno"><b>Alumno</b><span>Cargar las tareas y observaciones del día con sus fotos.</span></button>
+      <button type="button" class="door" data-role="docente"><b>Docente</b><span>Revisar registros, aceptar alumnos y descargar la carpeta.</span></button>
+    </div>
+    <div class="note">Se entra con la cuenta de Google. Solo pueden cargar los alumnos que el docente aceptó en el proyecto.</div>
+    <span id="login-msg" class="msg"></span>
+    <form id="req-form" class="panel" hidden>
+      <b>Pedir acceso al proyecto</b>
+      <div class="small muted">Entraste como <b id="req-email"></b>. El docente tiene que aceptarte antes de que puedas cargar.</div>
+      <div class="grid2">
+        <div class="field"><label for="req-name">Nombre y apellido</label><input id="req-name" autocomplete="name"></div>
+        <div class="field"><label for="req-curso">Curso y división</label><input id="req-curso" placeholder="Ej.: 6° 2ª"></div>
+      </div>
+      <div class="row"><button class="primary" type="submit">Pedir acceso</button><button type="button" class="ghost" data-signout>Usar otra cuenta</button><span id="req-msg" class="msg"></span></div>
+    </form>
+    <div id="req-wait" class="panel" hidden>
+      <b id="req-wait-title">Solicitud enviada</b>
+      <div id="req-wait-txt" class="small"></div>
+      <div class="row"><button type="button" class="ghost" data-signout>Usar otra cuenta</button></div>
+    </div>
+  </section>
+
+  <!-- Ficha del helicóptero -->
+  <section id="view-main" class="stack" hidden>
+    <div class="head">
+      <div style="min-width:0">
+        <div class="reg mono">ZS-HCW</div>
+        <div class="muted">Sikorsky S-62A · serie M62-003 · Taller Regional Quilmes</div>
+      </div>
+      <span class="chip c-curso">Restauración en curso</span>
+    </div>
+    <div class="stats" id="stats"></div>
+
+    <div id="menu" class="menu">
+      <button type="button" class="tile t-main" data-go="registro"><b>Nuevo registro</b><span>Tarea u observación de hoy, con fotos.</span></button>
+      <button type="button" class="tile" data-go="tareas"><b>Tareas</b><span id="tile-tareas">Cronograma de marzo a noviembre de 2027.</span></button>
+      <button type="button" class="tile" data-go="bitacora"><b>Calendario</b><span>Lo cargado día por día, con fotos.</span></button>
+      <button type="button" class="tile" data-go="sistemas"><b>Por sistema</b><span>Registros agrupados por zona del helicóptero.</span></button>
+      <button type="button" class="tile" data-go="descargar"><b>Descargar carpeta</b><span>PDF, fotos originales y planilla en un ZIP.</span></button>
+      <button type="button" class="tile staff-only" data-go="alumnos"><b>Alumnos</b><span id="tile-alumnos">Aceptar pedidos y ver quién cargó.</span></button>
+    </div>
+    <a href="#" id="sub-back" class="back" hidden>← Volver al menú</a>
+
+    <!-- Nuevo registro -->
+    <div data-sub="registro" class="stack" hidden>
+      <div id="saved-box" class="panel saved" hidden>
+        <b>Registro guardado.</b>
+        <div class="small" id="saved-txt">Si no hay señal, queda en el celular y se sube solo cuando vuelve la conexión.</div>
+        <div class="row"><button type="button" class="primary" id="saved-new">Cargar otro</button><button type="button" class="ghost" id="saved-log">Ver en el calendario</button></div>
+      </div>
+      <form id="entry-form" class="panel" novalidate>
+        <h2>Nuevo registro</h2>
+        <div class="field"><span class="lbl">Tipo</span>
+          <div class="tabs" id="kind-tabs">
+            <button type="button" data-k="tarea" aria-pressed="true">Tarea realizada</button>
+            <button type="button" data-k="obs" aria-pressed="false">Observación</button>
+            <button type="button" data-k="prob" aria-pressed="false">Problema encontrado</button>
+          </div>
+        </div>
+        <div class="grid3">
+          <div class="field"><label for="e-date">Fecha</label><input id="e-date" type="date" class="mono"></div>
+          <div class="field"><label for="e-sys">Sistema o zona *</label><select id="e-sys"></select></div>
+          <div class="field"><label for="e-where">Ubicación exacta</label><input id="e-where" placeholder="Ej.: piso, lado izquierdo, junto a la puerta"></div>
+        </div>
+        <div class="field"><label for="e-task">Tarea del cronograma</label><select id="e-task"></select></div>
+        <div class="field"><label for="e-title">Título corto *</label><input id="e-title" maxlength="120" placeholder="Ej.: Lijado del marco del parabrisas derecho"></div>
+        <div class="field"><label for="e-text" id="e-text-lbl">Qué se hizo y cómo *</label><textarea id="e-text"></textarea></div>
+        <div class="grid3" id="task-extra">
+          <div class="field"><label for="e-time">Tiempo (horas)</label><input id="e-time" inputmode="decimal" class="mono" placeholder="2,5"></div>
+          <div class="field"><label for="e-mat">Materiales usados</label><input id="e-mat" placeholder="Lija 220, desengrasante"></div>
+          <div class="field"><label for="e-tools">Herramientas</label><input id="e-tools" placeholder="Rotorbital, espátula"></div>
+          <div class="field"><label for="e-team">Trabajó con</label><input id="e-team" placeholder="Compañeros del grupo"></div>
+        </div>
+        <div class="field">
+          <span class="lbl">Fotos * (marcá cuáles son de antes y cuáles de después)</span>
+          <div class="photos" id="e-photos"></div>
+        </div>
+        <div class="row"><button class="primary" type="submit" id="e-submit">Guardar registro</button><span id="e-msg" class="msg"></span></div>
+      </form>
+    </div>
+
+    <!-- Calendario -->
+    <div data-sub="bitacora" class="stack" hidden>
+      <div class="panel">
+        <div class="calhead"><button type="button" class="ghost small" id="cal-prev" aria-label="Mes anterior">←</button><b id="cal-title"></b><button type="button" class="ghost small" id="cal-next" aria-label="Mes siguiente">→</button></div>
+        <div id="cal" class="cal"></div>
+        <div class="legend"><span><i style="background:var(--ok)"></i>Tareas</span><span><i style="background:var(--rep)"></i>Solo observaciones</span><span><i style="background:var(--pend)"></i>Problema encontrado</span></div>
+        <div class="small muted">Tocá un día con color para ver solo esos registros.</div>
+      </div>
+      <div class="panel">
+        <div class="row" style="justify-content:space-between"><h2>Registros</h2><span id="log-filter" class="small"></span></div>
+        <div class="grid2">
+          <input id="log-q" type="search" placeholder="Buscar en títulos y descripciones">
+          <select id="log-sys" aria-label="Filtrar por sistema"></select>
+        </div>
+        <div id="log" class="log"></div>
+      </div>
+    </div>
+
+    <!-- Tareas -->
+    <div data-sub="tareas" class="stack" hidden>
+      <div class="row" style="justify-content:space-between">
+        <h2>Tareas</h2>
+        <div class="tabs" id="t-tabs">
+          <button type="button" data-t="semana" aria-pressed="true">Esta semana</button>
+          <button type="button" data-t="gantt" aria-pressed="false">Cronograma</button>
+          <button type="button" data-t="lista" aria-pressed="false">Semana a semana</button>
+        </div>
+      </div>
+      <div data-t-view="semana" class="stack">
+        <div class="panel wk" id="t-week"></div>
+        <div class="panel"><h2>Avisos</h2><div class="alerts" id="t-alerts"></div></div>
+        <div class="panel wk" id="t-next"></div>
+      </div>
+      <div data-t-view="gantt" class="stack" hidden>
+        <div class="panel">
+          <div class="ganttwrap"><div class="gantt" id="t-gantt"></div></div>
+          <div class="legend"><span><i style="background:var(--st-gris)"></i>Organización y reserva</span><span><i style="background:repeating-linear-gradient(135deg,transparent 0 3px,var(--muted) 3px 5px)"></i>Receso de invierno</span><span><i style="background:var(--accent)"></i>Hoy</span></div>
+          <div class="small muted">Tocá una barra para abrir la tarea.</div>
+        </div>
+        <div class="panel">
+          <h2>Tareas, dependencias y holguras</h2>
+          <div class="small muted">La holgura es cuántas semanas puede atrasarse una tarea sin mover la entrega del 26 de noviembre.</div>
+          <div class="wtable" id="t-ids"></div>
+        </div>
+      </div>
+      <div data-t-view="lista" class="stack" hidden>
+        <div class="panel">
+          <div class="grid2">
+            <select id="t-fstage" aria-label="Filtrar por etapa"></select>
+            <select id="t-fstate" aria-label="Filtrar por estado"><option value="">Todos los estados</option><option value="porhacer">Por hacer</option><option value="encurso">En curso</option><option value="atrasada">Atrasadas</option><option value="hecha">Hechas</option></select>
+          </div>
+          <div class="wtable" id="t-list"></div>
+          <div class="small muted">Las etiquetas de etapa (I1 a I4, E1 a E5) son las de los planes interior y exterior. Org. es organización y Res. es reserva.</div>
+        </div>
+      </div>
+    </div>
+
+    <!-- Ficha de una tarea -->
+    <div data-sub="tarea" class="stack" hidden>
+      <a href="#" class="back" id="task-back">← Volver a tareas</a>
+      <div class="panel" id="task-card"></div>
+    </div>
+
+    <!-- Por sistema -->
+    <div data-sub="sistemas" class="stack" hidden>
+      <div class="stack" style="gap:4px">
+        <h2>Por sistema</h2>
+        <div class="small muted">Cada sistema es un capítulo de la carpeta y, más adelante, del manual.</div>
+      </div>
+      <div id="sys" class="sys"></div>
+    </div>
+
+    <!-- Descargar -->
+    <div data-sub="descargar" class="stack" hidden>
+      <div class="panel">
+        <h2>Descargar carpeta completa</h2>
+        <div class="grid3">
+          <div class="field"><label for="dl-range">Período</label>
+            <select id="dl-range"><option value="all">Todo el proyecto</option><option value="month">Este mes</option><option value="custom">Elegir fechas</option></select></div>
+          <div class="field"><label for="dl-order">Ordenar la carpeta</label>
+            <select id="dl-order"><option value="sys">Por sistema, y dentro por fecha</option><option value="date">Solo por fecha</option></select></div>
+          <div class="field"><label for="dl-which">Qué incluir</label>
+            <select id="dl-which"><option value="all">Todos los registros</option><option value="rev">Solo los revisados por el docente</option></select></div>
+        </div>
+        <div class="grid2" id="dl-dates" hidden>
+          <div class="field"><label for="dl-from">Desde</label><input id="dl-from" type="date" class="mono"></div>
+          <div class="field"><label for="dl-to">Hasta</label><input id="dl-to" type="date" class="mono"></div>
+        </div>
+        <span class="lbl">Contenido del archivo</span>
+        <div class="zip" id="zip"></div>
+        <div class="row"><button type="button" class="primary" id="dl-btn">Descargar ZIP</button><button type="button" id="dl-pdf">Solo el PDF</button><span id="dl-msg" class="msg"></span></div>
+        <div class="note">Necesita conexión: las fotos se bajan de Google Drive. Con muchas fotos puede tardar unos minutos.</div>
+      </div>
+    </div>
+
+    <!-- Alumnos (docente) -->
+    <div data-sub="alumnos" class="stack" hidden>
+      <div class="panel">
+        <h2>Pedidos de acceso</h2>
+        <div id="people-pend" class="people"></div>
+      </div>
+      <div class="panel">
+        <h2>Alumnos del proyecto</h2>
+        <div id="people-ok" class="people"></div>
+      </div>
+    </div>
+  </section>
+</div>
+
+<script src="config.js"></script>
+<script type="module">
+import {initializeApp} from "https://www.gstatic.com/firebasejs/10.12.2/firebase-app.js";
+import {getAuth,GoogleAuthProvider,signInWithPopup,signInWithRedirect,signOut,onAuthStateChanged} from "https://www.gstatic.com/firebasejs/10.12.2/firebase-auth.js";
+import {initializeFirestore,persistentLocalCache,persistentMultipleTabManager,doc,collection,getDoc,setDoc,updateDoc,deleteDoc,onSnapshot,query,orderBy} from "https://www.gstatic.com/firebasejs/10.12.2/firebase-firestore.js";
+
+const CFG = window.APP_CONFIG || {};
+const $ = id => document.getElementById(id);
+const esc = s => String(s ?? "").replace(/[&<>"']/g,c=>({"&":"&amp;","<":"&lt;",">":"&gt;",'"':"&quot;","'":"&#39;"}[c]));
+const pad = n => String(n).padStart(2,"0");
+const ymd = d => `${d.getFullYear()}-${pad(d.getMonth()+1)}-${pad(d.getDate())}`;
+const fmtD = s => { const [y,m,d]=String(s).split("-"); return y?`${d}/${m}/${y.slice(2)}`:""; };
+const fmtDT = iso => { try{ return new Date(iso).toLocaleString("es-AR",{dateStyle:"short",timeStyle:"short"}) }catch(e){ return iso } };
+const now = () => new Date().toISOString();
+const hrs = v => String(v).replace(".",",");
+function msg(id,text,kind){ const el=$(id); if(!el) return; el.textContent=text||""; el.className="msg"+(kind?" "+kind:""); }
+function lsGet(k){ try{return localStorage.getItem(k)||""}catch(e){return ""} }
+function lsSet(k,v){ try{localStorage.setItem(k,v)}catch(e){} }
+const slug = s => String(s||"").toLowerCase().normalize("NFD").replace(/[̀-ͯ]/g,"").replace(/[^a-z0-9]+/g,"-").replace(/^-|-$/g,"").slice(0,50);
+const APP_URL = location.origin + location.pathname;
+const MESES = ["Enero","Febrero","Marzo","Abril","Mayo","Junio","Julio","Agosto","Septiembre","Octubre","Noviembre","Diciembre"];
+
+if(!CFG.firebase){
+  const b=$("banner"); b.hidden=false;
+  b.textContent="La app todavía no está conectada a Firebase: falta completar config.js (ver LEEME.md).";
+  throw new Error("Falta firebase en config.js");
+}
+const fbApp = initializeApp(CFG.firebase);
+const auth = getAuth(fbApp);
+// Cache local: los registros se guardan en el celular y se suben cuando hay señal
+const fs = initializeFirestore(fbApp,{localCache:persistentLocalCache({tabManager:persistentMultipleTabManager()})});
+const isDocenteEmail = u => !!u && u.emailVerified && (CFG.docentes||[]).map(x=>x.toLowerCase()).includes((u.email||"").toLowerCase());
+
+if("serviceWorker" in navigator) navigator.serviceWorker.register("sw.js").catch(()=>{});
+
+const KIND = {tarea:"Tarea",obs:"Observación",prob:"Problema encontrado"};
+const SISTEMAS = ["Estructura y fuselaje","Cabina e interior","Puertas y ventanillas","Comandos de vuelo","Eléctrico","Instrumentos y aviónica","Pintura y protección","Flotadores y tren","Rotor principal","Rotor de cola","Transmisión","Motor","Combustible","Hidráulico","Otro"];
+const S = {role:null,name:"",uid:null,user:null,kind:"tarea",photos:[],calMonth:null,calDay:null,tview:"semana",task:null,
+  entries:[],tstate:{},people:[],unsubs:[],local:new Map()};
+
+/* ---------- Cronograma 2027, copiado del PDF del proyecto ---------- */
+const ET_COLOR = {"Org.":"gris","Res.":"gris","I1":"am","E1":"am","I2":"na","E2":"na","E1·E2":"na","I3":"ro","E3":"ro","I4":"bo","E4":"bo","E5":"az"};
+const et = s => `<span class="et et-${ET_COLOR[s]||"gris"}">${esc(s)}</span>`;
+// [semana, fechas, etapa, mes, título en negrita, resto, tareas]
+const WEEKS = [
+  [1,"1–5 mar","Org.","Marzo 2027","Organización.","Acta de alcance con la dirección, docente responsable, grupos de alumnos y horario de taller. Compra de EPP. Abrir registro de piezas y carpeta de fotos. Pedir muestras de color.",["A"]],
+  [2,"8–12 mar","Org.","Marzo 2027","Estabilización.","Retirar la lona de la nariz, calzar el fuselaje fuera del pasto, cortar pasto, destapar drenajes y cerrar aberturas con paneles provisorios.",["B","D"]],
+  [3,"15–19 mar","I1","Marzo 2027","Registro interior.","Fotos sistemáticas con regla, búsqueda de placas de identificación y números de pieza (posibles partes del ZS-HDJ).",["C","D"]],
+  [4,"22–26 mar","I1","Marzo 2027","Registro interior.","Cotas por estación y croquis. Verificar combustible o vapores bajo el piso y materiales sospechosos de asbesto. Aprobar las muestras de color al sol.",["C","D"]],
+  [5,"29 mar – 2 abr","I2","Marzo 2027","Desarme: comandos de vuelo.","Cíclico, colectivo, pedales y varillas hasta la primera unión fuera de la cabina. Embolsado y rotulado.",["E"]],
+  [6,"5–9 abr","I2","Abril 2027","Desarme: instalación eléctrica.","Baterías primero; después mazos, conectores, interruptores y cajas.",["F"]],
+  [7,"12–16 abr","I2","Abril 2027","Desarme: cañerías y conductos.","Hidráulicas, combustible, ventilación y calefacción. Tapar bocas hacia afuera de la cabina.",["G"]],
+  [8,"19–23 abr","I2","Abril 2027","Desarme: panel, consola, asientos, revestimientos y aislante.","Guardado de piezas bajo techo; residuos embolsados.",["H"]],
+  [9,"26–30 abr","I2","Abril 2027","Levantar el piso","numerando paneles. Limpieza y secado de la sentina; destapar drenajes del casco.",["I"]],
+  [10,"3–7 may","I3","Mayo 2027","Decapado interior: cabina de pilotos","con ventilación forzada.",["J"]],
+  [11,"10–14 may","I3","Mayo 2027","Decapado interior: cabina de pasajeros y sentina.","",["J"]],
+  [12,"17–21 may","I3","Mayo 2027","Corrosión interior.","Mapa, remoción mecánica en vigas de piso, quilla y cuadernas bajas; reparaciones con parches remachados.",["K"]],
+  [13,"24–28 may","I3","Mayo 2027","Tapas ciegas","en los pasos de comandos y mazos, sellado, limpiador ácido y Alodine. Imprimación interior en la misma semana, en el día más templado.",["L"]],
+  [14,"31 may – 4 jun","I3","Mayo 2027","Imprimar los paneles de piso","(ambas caras) y reponerlos. Cubrir el interior con film para protegerlo del trabajo exterior.",["M"]],
+  [15,"7–11 jun","E1","Junio 2027","Exterior: lavado y desengrasado.","Catas de pintura en 3 o 4 zonas protegidas, con fotos para la historia del helicóptero.",["N"]],
+  [16,"14–18 jun","E1","Junio 2027","Protección del exterior:","retirar parabrisas y transparencias, tapar tomas, pitot, drenajes y uniones abiertas.",["O"]],
+  [17,"21–25 jun","E2","Junio 2027","Transparencias:","prueba de pulido o, si no recuperan, copiar moldes para hacer nuevas.",["P"]],
+  [18,"28 jun – 2 jul","E2","Junio 2027","Sponsons:","enderezado de abolladuras. Prefabricar los parches de chapa que ya se ven necesarios.",["Q"]],
+  [19,"5–9 jul","E4","Julio 2027","Plantillas de las franjas","a escala real desde el dibujo, en cartón. Pedido del vinilo de la matrícula.",["R"]],
+  [20,"12–16 jul","Res.","Julio 2027","Semana de reserva","para atrasos. Antes del receso, cubrir todo el helicóptero con lona.",[]],
+  [0,"19 jul – 30 jul","","Julio 2027","Receso de invierno.","Sin taller; el helicóptero queda cubierto. Confirmar las fechas con el calendario escolar 2027.",[]],
+  [21,"2–6 ago","E1·E2","Agosto 2027","Zona 1, nariz y cabina: decapado.","Removedor por zonas de 1 m², rasqueta plástica, neutralizado.",["S"]],
+  [22,"9–13 ago","E1·E2","Agosto 2027","Zona 1: corrosión y reparación","(incluye la nariz izquierda bajo la ex lona), Alodine e imprimación en la misma semana.",["S"]],
+  [23,"16–20 ago","E1·E2","Agosto 2027","Zona 2, fuselaje central y techo: decapado.","",["S"]],
+  [24,"23–27 ago","E1·E2","Agosto 2027","Zona 2: corrosión, reparación, Alodine e imprimación.","",["S"]],
+  [25,"30 ago – 3 sep","E1·E2","Agosto 2027","Zona 3, cono de cola y deriva: decapado.","",["S"]],
+  [26,"6–10 sep","E1·E2","Septiembre 2027","Zona 3: corrosión, reparación, Alodine e imprimación.","",["S"]],
+  [27,"13–17 sep","E1·E2","Septiembre 2027","Zona 4, sponsons y casco inferior: decapado.","",["S"]],
+  [28,"20–24 sep","E1·E2","Septiembre 2027","Zona 4: corrosión, reparación, Alodine e imprimación.","Sellado general de solapes y marcos con polisulfuro.",["S"]],
+  [29,"27 sep – 1 oct","E3","Septiembre 2027","Nivelado:","masilla epóxica fina donde haga falta, aparejo y lijado al agua 320–400.",["T"]],
+  [30,"4–8 oct","I4","Octubre 2027","Pintura interior:","paredes y techo en gris claro semimate, piso gris con antideslizante.",["U"]],
+  [31,"11–15 oct","E3","Octubre 2027","Enmascarar aberturas","para proteger el interior. Base blanca exterior, 2 a 3 manos.",["V"]],
+  [32,"18–22 oct","E4","Octubre 2027","Curado del blanco","(mínimo 48 h). Trazado de la banda con láser y plantillas.",["W"]],
+  [33,"25–29 oct","E4","Octubre 2027","Marcar con cinta fina","de 3 mm, mirar desde 10 a 15 m y ajustar hasta que ambos lados coincidan.",["X"]],
+  [34,"1–5 nov","E4","Noviembre 2027","Amarillo","en todo el ancho de la banda; al día siguiente, enmascarar la franja amarilla y pintar naranja.",["Y"]],
+  [35,"8–12 nov","E4","Noviembre 2027","Rojo y después bordó.","Retiro de cintas apenas deja de estar pegajoso y retoques de bordes.",["Z"]],
+  [36,"15–19 nov","E4","Noviembre 2027","Banda en sponsons y franjas diagonales de la deriva.","Retoques generales.",["AA"]],
+  [37,"22–26 nov","E5","Noviembre 2027","Matrícula ZS-HCW","en ambos lados, barniz, reinstalación de transparencias, inspección final con fotos y registro de productos. Entrega.",["AB"]]
+];
+const BUY = {10:"Compra límite: removedor y EPP en el taller antes del 3 de mayo.",13:"Compra límite: limpiador ácido, Alodine e imprimación epóxica antes del 24 de mayo. Suelen importarse: pedirlos en marzo.",21:"Compra límite: sellador de polisulfuro y chapa antes del 2 de agosto.",30:"Compra límite: pintura interior antes del 4 de octubre.",31:"Compra límite: poliuretano blanco y de colores, cinta fina y vinilo antes del 11 de octubre."};
+const TASKS = [
+  ["A","Organización",1,[],1,1,"1 mar – 5 mar",6,"12 abr"],
+  ["B","Estabilización",1,["A"],2,2,"8 mar – 12 mar",6,"19 abr"],
+  ["C","Registro interior",2,["B"],3,4,"15 mar – 26 mar",6,"26 abr"],
+  ["D","Compras y aprobación de colores",3,["A"],2,4,"8 mar – 26 mar",11,"24 may"],
+  ["E","Desarme: comandos de vuelo",1,["C"],5,5,"29 mar – 2 abr",6,"10 may"],
+  ["F","Desarme: instalación eléctrica",1,["E"],6,6,"5 abr – 9 abr",6,"17 may"],
+  ["G","Desarme: cañerías y conductos",1,["F"],7,7,"12 abr – 16 abr",6,"24 may"],
+  ["H","Desarme: panel, asientos y aislante",1,["G"],8,8,"19 abr – 23 abr",6,"31 may"],
+  ["I","Piso levantado y sentina limpia",1,["H"],9,9,"26 abr – 30 abr",6,"7 jun"],
+  ["J","Decapado interior",2,["I","D"],10,11,"3 may – 14 may",6,"14 jun"],
+  ["K","Corrosión interior",1,["J"],12,12,"17 may – 21 may",6,"28 jun"],
+  ["L","Tapas, Alodine e imprimación interior",1,["K"],13,13,"24 may – 28 may",6,"5 jul"],
+  ["M","Piso imprimado y repuesto",1,["L"],14,14,"31 may – 4 jun",6,"12 jul"],
+  ["N","Lavado exterior y catas",1,["B"],15,15,"7 jun – 11 jun",4,"5 jul"],
+  ["O","Protección y retiro de transparencias",1,["N"],16,16,"14 jun – 18 jun",4,"12 jul"],
+  ["P","Transparencias: pulido o moldes",1,["O"],17,17,"21 jun – 25 jun",19,"15 nov"],
+  ["Q","Sponsons y parches prefabricados",1,["N"],18,18,"28 jun – 2 jul",2,"12 jul"],
+  ["R","Plantillas de franjas y vinilo",1,["A"],19,19,"5 jul – 9 jul",12,"11 oct"],
+  ["S","Decapado, corrosión e imprimación ext. (4 zonas)",8,["M","O","Q"],21,28,"2 ago – 24 sep",0,"2 ago"],
+  ["T","Nivelado exterior",1,["S"],29,29,"27 sep – 1 oct",0,"27 sep"],
+  ["U","Pintura interior",1,["T","M"],30,30,"4 oct – 8 oct",0,"4 oct"],
+  ["V","Base blanca exterior",1,["U"],31,31,"11 oct – 15 oct",0,"11 oct"],
+  ["W","Curado y trazado de franjas",1,["V","R"],32,32,"18 oct – 22 oct",0,"18 oct"],
+  ["X","Cinta fina y simetría",1,["W"],33,33,"25 oct – 29 oct",0,"25 oct"],
+  ["Y","Amarillo y naranja",1,["X"],34,34,"1 nov – 5 nov",0,"1 nov"],
+  ["Z","Rojo y bordó",1,["Y"],35,35,"8 nov – 12 nov",0,"8 nov"],
+  ["AA","Banda en sponsons y deriva",1,["Z"],36,36,"15 nov – 19 nov",0,"15 nov"],
+  ["AB","Matrícula, barniz, transparencias y entrega",1,["AA","P"],37,37,"22 nov – 26 nov",0,"22 nov"]
+].map(([id,name,dur,deps,from,to,dates,slack,limit])=>({id,name,dur,deps,from,to,dates,slack,limit}));
+const TASK = Object.fromEntries(TASKS.map(t=>[t.id,t]));
+const GANTT = [
+  ["Organización y estabilización","gris",1,2],["Registro interior (I1)","am",3,4],["Desarme y sentina (I2)","na",5,9],
+  ["Decapado, corrosión e imprimación interior (I3)","ro",10,14],["Trabajos en seco del exterior (E1)","am",15,19],["Reserva","gris",20,20],
+  ["Decapado y corrosión por zonas (E1·E2)","na",21,28],["Nivelado (E3)","ro",29,29],["Pintura interior (I4)","bo",30,30],
+  ["Base blanca (E3)","ro",31,31],["Franjas (E4)","bo",32,36],["Matrícula y cierre (E5)","az",37,37]
+];
+const STEPS_FIXED = {D:["Compra de EPP","Pedir muestras de color","Aprobar las muestras de color al sol","Pedir limpiador ácido, Alodine e imprimación epóxica (suelen importarse)"]};
+function taskSteps(t){
+  if(STEPS_FIXED[t.id]) return STEPS_FIXED[t.id];
+  const parts=[];
+  WEEKS.filter(w=>w[6].includes(t.id)).forEach(w=>{
+    (w[4]+" "+w[5]).split(/(?<=\.)\s+|;\s+/).map(s=>s.trim().replace(/\.$/,"")).filter(s=>s.length>3).forEach(s=>parts.push(s));
+  });
+  return parts;
+}
+// Semana del cronograma para una fecha: 1 a 37, con el receso de dos semanas después de la 20
+function weekInfo(d){
+  const days=Math.floor((new Date(d.getFullYear(),d.getMonth(),d.getDate())-new Date(2027,2,1))/864e5);
+  if(days<0) return {w:0,pre:true,left:Math.ceil(-days/7)};
+  let w=Math.floor(days/7)+1;
+  if(w<=20) return {w};
+  if(w<=22) return {w:20.5,receso:true};
+  w-=2; if(w>37) return {w:38,post:true};
+  return {w};
+}
+const NOWI = weekInfo(new Date()), NOW_WEEK = NOWI.w;
+const ST_LABEL = {hecha:"Hecha",encurso:"En curso",porhacer:"Por hacer",atrasada:"Atrasada",espera:"Esperando"};
+const tst = id => S.tstate[id]?.estado || "porhacer";
+function tStatus(t){
+  const s=tst(t.id);
+  if(s!=="hecha" && t.to<NOW_WEEK) return "atrasada";
+  if(s==="porhacer" && t.from<=NOW_WEEK && t.deps.some(d=>tst(d)!=="hecha")) return "espera";
+  return s;
+}
+function tProgress(t){ if(tst(t.id)==="hecha") return 100; const n=taskSteps(t).length, d=(S.tstate[t.id]?.pasos||[]).length; return n?Math.round(d/n*100):0; }
+const stChip = t => { const s=tStatus(t); return `<span class="chip c-${s}">${ST_LABEL[s]}</span>`; };
+const taskStage = t => WEEKS.find(w=>w[6].includes(t.id))[2];
+const col = w => w<=20 ? w+1 : w+3;
+
+/* ---------- Ingreso ----------
+   Alumno: cuenta de Google; la primera vez pide acceso y el docente lo acepta (colección "usuarios").
+   Docente: cuenta de Google listada en config.js (docentes). */
+const UA=navigator.userAgent||"";
+const IN_APP=/FBAN|FBAV|Instagram|WhatsApp|Line\/|Snapchat|TikTok|; wv\)/i.test(UA) || (/iPhone|iPad|iPod/.test(UA) && !/Safari\//.test(UA));
+function showStartPanel(which){ $("req-form").hidden=which!=="req"; $("req-wait").hidden=which!=="wait"; }
+document.querySelectorAll(".door[data-role]").forEach(b=>b.addEventListener("click",async()=>{
+  msg("login-msg",""); showStartPanel(null);
+  if(!auth.currentUser && IN_APP){ msg("login-msg","Google no deja iniciar sesión desde el navegador de esta aplicación. Tocá los tres puntos (⋮ o ···) y elegí \"Abrir en el navegador\", o copiá el link y pegalo en Chrome o Safari.","err"); return; }
+  try{
+    const u = auth.currentUser || (await signInWithPopup(auth,new GoogleAuthProvider())).user;
+    await enterAs(b.dataset.role,u);
+  }catch(err){
+    const code=err?.code||"";
+    if(code==="auth/popup-closed-by-user"||code==="auth/cancelled-popup-request") return;
+    if(code==="auth/popup-blocked"||code==="auth/operation-not-supported-in-this-environment"){
+      lsSet("s62-rol",b.dataset.role);
+      try{ await signInWithRedirect(auth,new GoogleAuthProvider()); return; }catch(e2){ err=e2; }
+    }
+    msg("login-msg",`No se pudo entrar con Google (${err?.code||err?.message||"error"}). Probá de nuevo o abrí la página en Chrome o Safari.`,"err");
+  }
+}));
+async function enterAs(role,u){
+  S.uid=u.uid; S.user=u;
+  if(role==="docente"){
+    if(!isDocenteEmail(u)){ msg("login-msg",`La cuenta ${u.email} no está cargada como docente.`,"err"); return; }
+    return start("docente",u.displayName||u.email);
+  }
+  if(isDocenteEmail(u)) return start("docente",u.displayName||u.email);
+  let d=null;
+  try{ const snap=await getDoc(doc(fs,"usuarios/"+u.uid)); d=snap.exists()?snap.data():null; }
+  catch(_){ msg("login-msg","No se pudo comprobar tu acceso. Revisá la conexión y probá de nuevo.","err"); return; }
+  if(d && d.estado==="aprobado") return start("alumno",d.nombre||u.displayName);
+  if(!d){ $("req-email").textContent=u.email; $("req-name").value=u.displayName||""; showStartPanel("req"); return; }
+  $("req-wait-title").textContent = d.estado==="rechazado" ? "Pedido rechazado" : "Pedido enviado";
+  $("req-wait-txt").textContent = d.estado==="rechazado"
+    ? `El docente no aceptó el acceso de ${u.email}. Si es un error, hablá con él.`
+    : `Pediste acceso el ${fmtDT(d.fecha)} con ${u.email}. Cuando el docente te acepte vas a poder entrar.`;
+  showStartPanel("wait");
+}
+$("req-form").addEventListener("submit",async e=>{
+  e.preventDefault();
+  const u=S.user, nombre=$("req-name").value.trim().replace(/\s+/g," "), curso=$("req-curso").value.trim();
+  if(!u) return; if(nombre.length<3) return msg("req-msg","Escribí tu nombre y apellido.","err");
+  try{
+    await setDoc(doc(fs,"usuarios/"+u.uid),{nombre,curso,email:u.email,estado:"pendiente",fecha:now()});
+    if(CFG.fotosScript){ try{ await fetch(CFG.fotosScript,{method:"POST",body:JSON.stringify({accion:"aviso",idToken:await u.getIdToken(),nombre,curso,app:APP_URL})}); }catch(_){} }
+    await enterAs("alumno",u);
+  }catch(err){ msg("req-msg","No se pudo enviar el pedido. Probá de nuevo.","err"); }
+});
+document.querySelectorAll("[data-signout]").forEach(b=>b.addEventListener("click",async()=>{ await signOut(auth); showStartPanel(null); }));
+$("logout").addEventListener("click",async()=>{
+  stop(); lsSet("s62-rol","");
+  try{ await signOut(auth); }catch(_){}
+  $("view-main").hidden=true; $("view-start").hidden=false; $("who-box").hidden=true; showStartPanel(null);
+});
+onAuthStateChanged(auth,u=>{
+  const role=lsGet("s62-rol");
+  if(u && role && !S.role) enterAs(role,u);
+});
+
+function start(role,name){
+  S.role=role; S.name=name||""; lsSet("s62-rol",role);
+  document.body.classList.toggle("role-docente",role==="docente");
+  $("who-box").hidden=false; $("who-role").textContent=role==="docente"?"Docente":"Alumno"; $("who-txt").textContent=S.name;
+  $("view-start").hidden=true; $("view-main").hidden=false; showStartPanel(null); msg("login-msg","");
+  showSub("menu"); resetForm();
+  // Escucha en vivo: registros, tareas y (docente) alumnos
+  S.unsubs.push(onSnapshot(query(collection(fs,"registros"),orderBy("fecha","desc")),{includeMetadataChanges:true},snap=>{
+    S.entries=snap.docs.map(d=>({id:d.id,...d.data(),_pend:d.metadata.hasPendingWrites}));
+    if(!S.calMonth && S.entries[0]){ const d=new Date(S.entries[0].fecha+"T12:00"); S.calMonth=[d.getFullYear(),d.getMonth()]; }
+    renderAll(); updateSync();
+  },err=>showBanner("No se pudieron leer los registros: "+(err.code||err.message))));
+  S.unsubs.push(onSnapshot(collection(fs,"tareas"),snap=>{
+    S.tstate=Object.fromEntries(snap.docs.map(d=>[d.id,d.data()])); renderTasks(); if(S.task && !$("task-card").closest("[hidden]")) openTask(S.task,true);
+  },()=>{}));
+  if(role==="docente") S.unsubs.push(onSnapshot(collection(fs,"usuarios"),snap=>{ S.people=snap.docs.map(d=>({id:d.id,...d.data()})); renderPeople(); },()=>{}));
+  renderAll(); processQueue();
+}
+function stop(){ S.unsubs.forEach(f=>f()); S.unsubs=[]; S.role=null; S.entries=[]; S.tstate={}; S.people=[]; document.body.classList.remove("role-docente"); }
+function showBanner(t){ const b=$("banner"); b.hidden=!t; b.textContent=t||""; }
+
+/* ---------- Navegación ---------- */
+function showSub(name){
+  $("menu").hidden = name!=="menu"; $("sub-back").hidden = name==="menu";
+  document.querySelectorAll("[data-sub]").forEach(s=>s.hidden = s.dataset.sub!==name);
+  if(name==="registro"){ $("saved-box").hidden=true; $("entry-form").hidden=false; }
+  window.scrollTo(0,0);
+}
+$("menu").addEventListener("click",e=>{ const t=e.target.closest("[data-go]"); if(t) showSub(t.dataset.go); });
+$("sub-back").addEventListener("click",e=>{ e.preventDefault(); showSub("menu"); });
+
+function renderAll(){ renderTasks(); renderStats(); renderCal(); renderLog(); renderSys(); renderZip(); renderPeople(); }
+function renderStats(){
+  const E=S.entries, days=new Set(E.map(e=>e.fecha)).size, ph=E.reduce((n,e)=>n+(e.fotos||[]).length,0), h=E.reduce((n,e)=>n+(+e.tiempo||0),0);
+  const authors=new Set(E.map(e=>e.autorId)).size;
+  const pl=(n,a,b)=>`<span><b>${hrs(n)}</b> ${n===1?a:b}</span>`;
+  $("stats").innerHTML=pl(E.length,"registro","registros")+pl(days,"día de trabajo","días de trabajo")+pl(ph,"foto","fotos")+pl(Math.round(h*10)/10,"hora","horas")+pl(authors,"persona cargando","personas cargando");
+}
+
+/* ---------- Fotos: se achican en el celular, esperan en una cola local y suben a Drive ---------- */
+const IDB = (()=>{ let p=null; const open=()=>p||(p=new Promise((res,rej)=>{ const r=indexedDB.open("s62-fotos",1);
+  r.onupgradeneeded=()=>r.result.createObjectStore("cola"); r.onsuccess=()=>res(r.result); r.onerror=()=>rej(r.error); }));
+  const tx=async(mode,fn)=>{ const db=await open(); return new Promise((res,rej)=>{ const t=db.transaction("cola",mode), st=t.objectStore("cola"), out=fn(st); t.oncomplete=()=>res(out.result); t.onerror=()=>rej(t.error); }); };
+  return {put:(k,v)=>tx("readwrite",s=>s.put(v,k)), get:k=>tx("readonly",s=>s.get(k)), del:k=>tx("readwrite",s=>s.delete(k)), keys:()=>tx("readonly",s=>s.getAllKeys())}; })();
+async function shrink(file){
+  const bmp=await createImageBitmap(file,{imageOrientation:"from-image"}).catch(()=>null);
+  const src=bmp||await new Promise((res,rej)=>{ const i=new Image(); i.onload=()=>res(i); i.onerror=rej; i.src=URL.createObjectURL(file); });
+  const W=src.width, H=src.height, k=Math.min(1,1600/Math.max(W,H)), w=Math.round(W*k), h=Math.round(H*k);
+  const c=document.createElement("canvas"); c.width=w; c.height=h; c.getContext("2d").drawImage(src,0,0,w,h);
+  const blob=await new Promise(r=>c.toBlob(r,"image/jpeg",0.82));
+  return {blob,w,h};
+}
+const b64 = blob => new Promise((res,rej)=>{ const fr=new FileReader(); fr.onload=()=>res(String(fr.result).split(",")[1]); fr.onerror=rej; fr.readAsDataURL(blob); });
+const driveImg = id => `https://drive.google.com/thumbnail?id=${encodeURIComponent(id)}&sz=w800`;
+function photoBox(f,i){
+  const local=f.k && S.local.get(f.k), src=f.id?driveImg(f.id):local||"";
+  const inner=`${src?`<img src="${esc(src)}" alt="Foto ${i+1}" loading="lazy"${f.id?` onerror="this.onerror=null;this.src='https://lh3.googleusercontent.com/d/${encodeURIComponent(f.id)}=w800'"`:""}>`:""}${f.tag?`<span class="tag">${esc(f.tag)}</span>`:""}<span class="cap">${f.id?"Foto "+(i+1):"Esperando señal"}</span>`;
+  return f.id?`<a class="ph" href="https://drive.google.com/file/d/${encodeURIComponent(f.id)}/view" target="_blank" rel="noopener">${inner}</a>`:`<div class="ph">${inner}</div>`;
+}
+function renderFormPhotos(){
+  $("e-photos").innerHTML = S.photos.map((p,i)=>`<div class="ph"><img src="${p.url}" alt="Foto ${i+1}">
+    <select data-i="${i}" aria-label="Momento de la foto ${i+1}"><option value="">Sin marcar</option><option value="antes"${p.tag==="antes"?" selected":""}>Antes</option><option value="después"${p.tag==="después"?" selected":""}>Después</option></select>
+    <button type="button" class="x" data-del="${i}" aria-label="Quitar foto ${i+1}">✕</button></div>`).join("")
+    + `<label class="photo-add"><b>+</b>Sacar o elegir foto<input id="e-file" type="file" accept="image/*" multiple></label>`;
+}
+$("e-photos").addEventListener("change",async e=>{
+  if(e.target.matches("select[data-i]")){ S.photos[+e.target.dataset.i].tag=e.target.value; return; }
+  if(e.target.id!=="e-file") return;
+  msg("e-msg","Preparando fotos…");
+  for(const f of [...e.target.files]){ try{ const r=await shrink(f); S.photos.push({...r,url:URL.createObjectURL(r.blob),tag:""}); }catch(_){ msg("e-msg","Una foto no se pudo leer.","err"); } }
+  if($("e-msg").textContent==="Preparando fotos…") msg("e-msg","");
+  renderFormPhotos();
+});
+$("e-photos").addEventListener("click",e=>{ const b=e.target.closest("[data-del]"); if(b){ S.photos.splice(+b.dataset.del,1); renderFormPhotos(); } });
+
+let queueBusy=false;
+async function processQueue(){
+  if(queueBusy || !S.role || !navigator.onLine || !CFG.fotosScript) { updateSync(); return; }
+  queueBusy=true;
+  try{
+    const keys=(await IDB.keys()).sort();
+    for(const k of keys){
+      const it=await IDB.get(k); if(!it) continue;
+      if(!S.local.has(k)) S.local.set(k,URL.createObjectURL(it.blob));
+      const r=await fetch(CFG.fotosScript,{method:"POST",body:JSON.stringify({accion:"subir",idToken:await auth.currentUser.getIdToken(),
+        registroId:it.reg,sistema:it.sistema,nombre:it.nombre,data:await b64(it.blob)})}).then(x=>x.json());
+      if(!r.ok) throw new Error(r.error||"error");
+      // Reemplaza la foto local por la de Drive en el registro
+      const ref=doc(fs,"registros/"+it.reg), snap=await getDoc(ref);
+      if(snap.exists()){ const fotos=(snap.data().fotos||[]).map(f=>f.k===k?{id:r.id,tag:f.tag,w:f.w,h:f.h}:f); await updateDoc(ref,{fotos}); }
+      await IDB.del(k);
+    }
+  }catch(err){ console.warn("Fotos: "+err.message); setTimeout(processQueue,60000); }
+  queueBusy=false; updateSync();
+}
+window.addEventListener("online",processQueue);
+async function updateSync(){
+  let n=0; try{ n=(await IDB.keys()).length; }catch(_){}
+  const pw=S.entries.filter(e=>e._pend).length, el=$("sync");
+  const parts=[]; if(pw) parts.push(`${pw} registro${pw>1?"s":""} sin subir`); if(n) parts.push(`${n} foto${n>1?"s":""} esperando señal`);
+  if(!CFG.fotosScript && n) parts.push("falta el script de fotos");
+  el.hidden=!parts.length; el.textContent=parts.join(" · ");
+}
+
+/* ---------- Formulario ---------- */
+$("e-sys").innerHTML = `<option value="">Elegí uno</option>`+SISTEMAS.map(s=>`<option>${s}</option>`).join("");
+function setKind(k){
+  S.kind=k;
+  document.querySelectorAll("#kind-tabs button").forEach(b=>b.setAttribute("aria-pressed",String(b.dataset.k===k)));
+  $("task-extra").hidden = k!=="tarea";
+  $("e-text-lbl").textContent = k==="tarea"?"Qué se hizo y cómo *":k==="obs"?"Qué se observó *":"Qué se encontró y qué riesgo tiene *";
+  $("e-text").placeholder = k==="tarea"?"Pasos, herramientas, cuidados y resultado. Escribilo para que otro alumno lo pueda repetir.":k==="obs"?"Qué viste, dónde y en qué estado está.":"Describí el problema, dónde está y si se hizo algo provisorio.";
+}
+$("kind-tabs").addEventListener("click",e=>{ const b=e.target.closest("[data-k]"); if(b) setKind(b.dataset.k); });
+function currentTaskId(){ const w=WEEKS.find(x=>x[0]===Math.floor(NOW_WEEK)); return w?.[6]?.[0]||""; }
+function resetForm(){
+  ["e-where","e-title","e-text","e-time","e-mat","e-tools","e-team"].forEach(id=>$(id).value="");
+  $("e-task").innerHTML = `<option value="">Ninguna (observación suelta)</option>`+TASKS.map(t=>`<option value="${t.id}">${t.id} · ${esc(t.name)} (sem ${t.from===t.to?t.from:t.from+"–"+t.to})</option>`).join("");
+  $("e-task").value = currentTaskId();
+  $("e-sys").value=""; $("e-date").value=ymd(new Date());
+  S.photos.forEach(p=>URL.revokeObjectURL(p.url)); S.photos=[]; renderFormPhotos(); setKind("tarea"); msg("e-msg","");
+}
+$("entry-form").addEventListener("submit",async e=>{
+  e.preventDefault();
+  if(!$("e-sys").value) return msg("e-msg","Elegí el sistema o zona.","err");
+  if(!$("e-title").value.trim()) return msg("e-msg","Escribí un título corto.","err");
+  if(!$("e-text").value.trim()) return msg("e-msg","Contá qué se hizo o qué se vio.","err");
+  if(!S.photos.length) return msg("e-msg","Agregá al menos una foto.","err");
+  const btn=$("e-submit"); btn.disabled=true; msg("e-msg","Guardando…");
+  try{
+    const ref=doc(collection(fs,"registros")), fecha=$("e-date").value||ymd(new Date()), titulo=$("e-title").value.trim(), sistema=$("e-sys").value;
+    const fotos=[];
+    for(const [i,p] of S.photos.entries()){
+      const k=`${Date.now()}-${ref.id}-${pad(i+1)}`;
+      await IDB.put(k,{blob:p.blob,reg:ref.id,sistema,nombre:`${fecha}_${slug(titulo)}_${pad(i+1)}.jpg`});
+      S.local.set(k,URL.createObjectURL(p.blob));
+      fotos.push({k,tag:p.tag,w:p.w,h:p.h});
+    }
+    const t=parseFloat($("e-time").value.replace(",","."));
+    const data={fecha,tipo:S.kind,tarea:$("e-task").value,sistema,ubicacion:$("e-where").value.trim(),titulo,texto:$("e-text").value.trim(),
+      tiempo:S.kind==="tarea"&&isFinite(t)?t:0,materiales:$("e-mat").value.trim(),herramientas:$("e-tools").value.trim(),con:$("e-team").value.trim(),
+      autorId:S.uid,autor:S.name,creado:now(),revisado:false,fotos};
+    // Sin señal la escritura queda en el celular: no se espera la confirmación del servidor
+    setDoc(ref,data).catch(err=>showBanner("No se pudo guardar un registro: "+(err.code||err.message)));
+    resetForm(); $("entry-form").hidden=true; $("saved-box").hidden=false;
+    $("saved-txt").textContent = navigator.onLine ? "Las fotos se están subiendo a Drive. Si cerrás la app antes, terminan de subir la próxima vez que la abras." : "No hay señal: el registro y las fotos quedan en el celular y se suben solos cuando vuelve la conexión.";
+    S.calDay=null; processQueue();
+  }catch(err){ msg("e-msg","No se pudo guardar: "+(err.message||err),"err"); }
+  btn.disabled=false;
+});
+$("saved-new").addEventListener("click",()=>{ $("saved-box").hidden=true; $("entry-form").hidden=false; });
+$("saved-log").addEventListener("click",()=>showSub("bitacora"));
+
+/* ---------- Calendario ---------- */
+function dayKind(list){ if(list.some(e=>e.tipo==="prob")) return "prob"; if(list.some(e=>e.tipo==="tarea")) return "tarea"; return "obs"; }
+function renderCal(){
+  if(!S.calMonth){ const d=new Date(); S.calMonth=[d.getFullYear(),d.getMonth()]; }
+  const [y,m]=S.calMonth, off=(new Date(y,m,1).getDay()+6)%7, n=new Date(y,m+1,0).getDate(), today=ymd(new Date());
+  $("cal-title").textContent=`${MESES[m]} ${y}`;
+  let h=["L","M","M","J","V","S","D"].map(d=>`<span class="dow">${d}</span>`).join("")+"<span></span>".repeat(off);
+  for(let d=1; d<=n; d++){
+    const key=`${y}-${pad(m+1)}-${pad(d)}`, list=S.entries.filter(e=>e.fecha===key);
+    const cls=["day"]; if(list.length) cls.push("d-"+dayKind(list)); if(key===today) cls.push("today"); if(key===S.calDay) cls.push("sel");
+    h+=`<button type="button" class="${cls.join(" ")}" data-day="${key}" ${list.length?"":"disabled"} aria-label="${d} de ${MESES[m]}${list.length?`, ${list.length} registros`:""}">${d}${list.length?`<small>${list.length}</small>`:""}</button>`;
+  }
+  $("cal").innerHTML=h;
+}
+$("cal").addEventListener("click",e=>{ const b=e.target.closest("[data-day]"); if(!b||b.disabled) return; S.calDay = S.calDay===b.dataset.day?null:b.dataset.day; renderCal(); renderLog(); });
+$("cal-prev").addEventListener("click",()=>{ let [y,m]=S.calMonth; m--; if(m<0){m=11;y--;} S.calMonth=[y,m]; renderCal(); });
+$("cal-next").addEventListener("click",()=>{ let [y,m]=S.calMonth; m++; if(m>11){m=0;y++;} S.calMonth=[y,m]; renderCal(); });
+
+/* ---------- Registros ---------- */
+$("log-sys").innerHTML = `<option value="">Todos los sistemas</option>`+SISTEMAS.map(s=>`<option>${s}</option>`).join("");
+$("log-q").addEventListener("input",renderLog); $("log-sys").addEventListener("change",renderLog);
+function entryHtml(e,full){
+  return `<div class="entry">
+    <div class="when">${fmtD(e.fecha)}</div>
+    <div class="body">
+      <div class="row" style="gap:8px"><span class="chip c-${esc(e.tipo)}">${KIND[e.tipo]||""}</span><b>${esc(e.titulo)}</b></div>
+      ${full?`<div class="kv">${e.tarea&&TASK[e.tarea]?`<span><b>Tarea:</b> <a href="#" data-task="${e.tarea}">${e.tarea} · ${esc(TASK[e.tarea].name)}</a></span>`:""}<span><b>Sistema:</b> ${esc(e.sistema)}</span>${e.ubicacion?`<span><b>Dónde:</b> ${esc(e.ubicacion)}</span>`:""}<span><b>Cargó:</b> ${esc(e.autor)}</span>${e.con?`<span><b>Con:</b> ${esc(e.con)}</span>`:""}${e.tiempo?`<span><b>Tiempo:</b> <span class="mono">${hrs(e.tiempo)} h</span></span>`:""}</div>
+      <p>${esc(e.texto)}</p>
+      ${e.materiales||e.herramientas?`<div class="kv small muted">${e.materiales?`<span><b>Materiales:</b> ${esc(e.materiales)}</span>`:""}${e.herramientas?`<span><b>Herramientas:</b> ${esc(e.herramientas)}</span>`:""}</div>`:""}`
+      :`<div class="small muted">Cargó ${esc(e.autor)} · ${(e.fotos||[]).length} fotos</div>`}
+      <div class="photos">${(e.fotos||[]).map(photoBox).join("")}</div>
+      ${full?`<div class="row" style="gap:8px">${e._pend?`<span class="chip c-prob">Sin subir</span>`:""}${e.revisado?`<span class="chip c-rev">Revisado por el docente</span>`:`<span class="chip c-sinrev">Sin revisar</span>`}
+        <button type="button" class="ghost small staff-only" data-rev="${e.id}">${e.revisado?"Quitar revisión":"Marcar revisado"}</button>
+        ${S.role==="docente"||(e.autorId===S.uid&&!e.revisado)?`<button type="button" class="ghost small" data-delreg="${e.id}">Borrar</button>`:""}</div>`:""}
+    </div></div>`;
+}
+function renderLog(){
+  const q=$("log-q").value.trim().toLowerCase(), sys=$("log-sys").value;
+  const list=S.entries.filter(e=>(!S.calDay||e.fecha===S.calDay)&&(!sys||e.sistema===sys)&&(!q||(e.titulo+" "+e.texto).toLowerCase().includes(q)));
+  $("log-filter").innerHTML = S.calDay?`Solo el ${fmtD(S.calDay)} · <a href="#" id="clear-day">ver todo</a>`:"";
+  const cd=$("clear-day"); if(cd) cd.addEventListener("click",ev=>{ev.preventDefault(); S.calDay=null; renderCal(); renderLog();});
+  $("log").innerHTML = list.length ? list.map(e=>entryHtml(e,true)).join("") : `<div class="empty">${S.entries.length?"No hay registros con ese filtro.":"Todavía no hay registros. Usá Nuevo registro para cargar el primero."}</div>`;
+}
+const confirmDel = new Set();
+$("log").addEventListener("click",async e=>{
+  const r=e.target.closest("[data-rev]");
+  if(r){ const en=S.entries.find(x=>x.id===r.dataset.rev); updateDoc(doc(fs,"registros/"+en.id),{revisado:!en.revisado,revisadoPor:S.name,revisadoEl:now()}).catch(()=>{}); return; }
+  const d=e.target.closest("[data-delreg]");
+  if(d){ const id=d.dataset.delreg;
+    if(!confirmDel.has(id)){ confirmDel.add(id); d.textContent="Tocá de nuevo para borrar"; d.classList.add("danger"); setTimeout(()=>{ confirmDel.delete(id); d.textContent="Borrar"; d.classList.remove("danger"); },4000); return; }
+    deleteDoc(doc(fs,"registros/"+id)).catch(()=>{}); }
+});
+
+/* ---------- Por sistema ---------- */
+function renderSys(){
+  const E=S.entries, used=SISTEMAS.map(s=>[s,E.filter(e=>e.sistema===s)]).filter(([,l])=>l.length);
+  const empty=SISTEMAS.filter(s=>!E.some(e=>e.sistema===s));
+  $("sys").innerHTML = used.map(([s,l])=>{
+    const c=k=>l.filter(e=>e.tipo===k).length, n=l.length, last=l.map(e=>e.fecha).sort().pop();
+    return `<button type="button" class="sysc" data-sys="${esc(s)}"><b>${esc(s)}</b>
+      <div class="bar"><i style="width:${c("tarea")/n*100}%;background:var(--ok)"></i><i style="width:${c("obs")/n*100}%;background:var(--rep)"></i><i style="width:${c("prob")/n*100}%;background:var(--pend)"></i></div>
+      <div class="small">${c("tarea")} tareas · ${c("obs")} observaciones · ${c("prob")} problemas</div>
+      <div class="small muted">${l.reduce((a,e)=>a+(e.fotos||[]).length,0)} fotos · último registro <span class="mono">${fmtD(last)}</span></div></button>`;
+  }).join("") + (empty.length?`<div class="sysc" style="border-style:dashed"><b class="muted">Sin registros todavía</b><div class="small muted">${empty.map(esc).join(" · ")}</div></div>`:"");
+}
+$("sys").addEventListener("click",e=>{ const b=e.target.closest("[data-sys]"); if(!b) return; $("log-sys").value=b.dataset.sys; S.calDay=null; renderCal(); renderLog(); showSub("bitacora"); });
+
+/* ---------- Tareas ---------- */
+$("t-tabs").addEventListener("click",e=>{ const b=e.target.closest("[data-t]"); if(!b) return; S.tview=b.dataset.t;
+  document.querySelectorAll("#t-tabs button").forEach(x=>x.setAttribute("aria-pressed",String(x===b)));
+  document.querySelectorAll("[data-t-view]").forEach(v=>v.hidden=v.dataset.tView!==S.tview); });
+function taskRow(t){
+  const n=S.entries.filter(e=>e.tarea===t.id).length, p=tProgress(t);
+  return `<button type="button" class="task" data-task="${t.id}"><span class="tid">${t.id}</span>
+    <span class="tb"><b>${esc(t.name)}</b><span class="small muted">${et(taskStage(t))} Sem ${t.from===t.to?t.from:t.from+"–"+t.to} · ${esc(t.dates)} · ${n} registro${n===1?"":"s"}${t.slack===0?' · <span class="crit">Sin holgura</span>':""}${S.tstate[t.id]?.grupo?" · "+esc(S.tstate[t.id].grupo):""}</span>
+    <span class="prog" aria-label="Avance ${p}%"><i style="width:${p}%"></i></span></span>${stChip(t)}</button>`;
+}
+function weekBlock(w,label){
+  return `<div class="wkhead"><span class="n">Semana ${w[0]}</span><span class="mono muted">${esc(w[1])}</span>${et(w[2])}<span class="lbl">${label}</span></div>
+    <div><b>${esc(w[4])}</b> ${esc(w[5])}</div>${BUY[w[0]]?`<span class="buy">${esc(BUY[w[0]])}</span>`:""}
+    ${w[6].map(id=>taskRow(TASK[id])).join("")}`;
+}
+function renderTasks(){
+  const W=n=>WEEKS.find(w=>w[0]===n);
+  let cur, next, curLbl="Esta semana";
+  if(NOWI.pre){ cur=W(1); next=W(2); curLbl=`Empieza en ${NOWI.left} semana${NOWI.left===1?"":"s"}`; }
+  else if(NOWI.receso){ cur=W(21); next=W(22); curLbl="Después del receso"; }
+  else if(NOWI.post){ cur=W(37); next=null; curLbl="Última semana"; }
+  else { cur=W(NOW_WEEK); next=W(NOW_WEEK+1); }
+  $("t-week").innerHTML = weekBlock(cur,curLbl) + (cur[6][0]?`<div class="row"><button type="button" class="primary" data-log="${cur[6][0]}">Registrar avance de esta semana</button></div>`:"");
+  $("t-next").hidden=!next; if(next) $("t-next").innerHTML = weekBlock(next,"La semana que viene");
+  const done=TASKS.filter(t=>tStatus(t)==="hecha").length;
+  $("tile-tareas").textContent = NOWI.pre ? `Empieza el 1 de marzo de 2027 · ${done} de ${TASKS.length} hechas.` : `${done} de ${TASKS.length} tareas hechas · semana ${Math.min(37,Math.floor(NOW_WEEK))} de 37.`;
+  const al=[];
+  TASKS.filter(t=>tStatus(t)==="atrasada").forEach(t=>al.push(`<div class="alert a-stop"><b>${t.id} · ${esc(t.name)} está atrasada.</b> Tenía que terminar en la semana ${t.to}. Tiene ${t.slack} semanas de holgura: el inicio límite es el ${esc(t.limit)}.</div>`));
+  Object.entries(BUY).filter(([w])=>+w>=NOW_WEEK && +w<=NOW_WEEK+8).forEach(([w,txt])=>al.push(`<div class="alert">${esc(txt)} <span class="muted">(faltan ${Math.ceil(+w-NOW_WEEK)} semanas)</span></div>`));
+  if(NOW_WEEK<29) al.push(`<div class="alert">Desde el 2 de agosto (semana 21) la cadena exterior no tiene holgura: cada semana perdida corre la entrega del 26 de noviembre.</div>`);
+  $("t-alerts").innerHTML=al.join("") || `<div class="small muted">Sin avisos.</div>`;
+  const months=[["mar",1,5],["abr",6,9],["may",10,14],["jun",15,18],["jul",19,20],["ago",21,25],["sep",26,29],["oct",30,33],["nov",34,37]];
+  let g=`<span></span>`+months.map(([m,a,b])=>`<span class="gm" style="grid-column:${col(a)}/${col(b)+1};grid-row:1">${m}</span>`).join("");
+  g+=`<span class="gm" style="grid-column:22/24;grid-row:1;border-left:0">rec.</span>`;
+  GANTT.forEach(([l,c,a,b],i)=>{
+    const r=i+2, ids=WEEKS.filter(w=>w[0]>=a&&w[0]<=b).flatMap(w=>w[6]).filter((v,k,arr)=>arr.indexOf(v)===k);
+    const allDone=ids.length&&ids.every(id=>tStatus(TASK[id])==="hecha");
+    g+=`<span class="gl" style="grid-row:${r}">${esc(l)}</span><span class="gbg" style="grid-row:${r}"></span>
+      <button type="button" class="gbar${allDone?" done":""}" style="grid-row:${r};grid-column:${col(a)}/${col(b)+1};background:var(--st-${c})" ${ids[0]?`data-task="${ids[0]}"`:"disabled"} aria-label="${esc(l)}, semanas ${a} a ${b}"></button>`;
+  });
+  g+=`<span class="grec" style="grid-row:2/${GANTT.length+2};grid-column:22/24"></span>`;
+  if(NOW_WEEK>=1 && NOW_WEEK<=37){ const c=NOWI.receso?22:col(NOW_WEEK);
+    g+=`<span class="gnow" style="grid-row:2/${GANTT.length+2};grid-column:${c}"></span><span class="gnowlbl" style="grid-row:${GANTT.length+2};grid-column:${c}/span 6">▲ hoy</span>`; }
+  $("t-gantt").innerHTML=g;
+  $("t-ids").innerHTML = TASKS.map(taskRow).join("");
+  renderWeekList();
+}
+$("t-fstage").innerHTML = `<option value="">Todas las etapas</option>`+[...new Set(WEEKS.map(w=>w[2]).filter(Boolean))].map(s=>`<option>${s}</option>`).join("");
+$("t-fstage").addEventListener("change",renderWeekList); $("t-fstate").addEventListener("change",renderWeekList);
+function renderWeekList(){
+  const fs_=$("t-fstage").value, fst=$("t-fstate").value; let month="", h="";
+  WEEKS.forEach(w=>{
+    if(fs_ && w[2]!==fs_) return;
+    const ts=w[6].map(id=>TASK[id]);
+    if(fst && !ts.some(t=>tStatus(t)===fst)) return;
+    if(w[3]!==month){ month=w[3]; h+=`<div class="wmonth">${esc(month)}</div>`; }
+    if(!w[0]){ h+=`<div class="wrow rec"><span></span><span class="sf">${esc(w[1])}</span><span class="se"></span><span class="sd"><b>${esc(w[4])}</b> ${esc(w[5])}</span><span></span></div>`; return; }
+    h+=`<button type="button" class="wrow${w[0]===Math.floor(NOW_WEEK)&&!NOWI.receso?" now":""}" ${ts[0]?`data-task="${ts[0].id}"`:"disabled"}>
+      <span class="sn">${w[0]}</span><span class="sf">${esc(w[1])}</span><span class="se">${et(w[2])}</span>
+      <span class="sd"><b>${esc(w[4])}</b> ${esc(w[5])}${BUY[w[0]]?`<span class="buy">${esc(BUY[w[0]])}</span>`:""}</span>
+      <span class="ss">${ts.map(stChip).join(" ")}</span></button>`;
+  });
+  $("t-list").innerHTML = h || `<div class="empty">Ninguna semana coincide con el filtro.</div>`;
+}
+const tdoc = id => doc(fs,"tareas/"+id);
+function saveTask(id,patch){ setDoc(tdoc(id),{...patch,actualizado:now(),actualizadoPor:S.name},{merge:true}).catch(err=>showBanner("No se pudo guardar la tarea: "+(err.code||err.message))); }
+function openTask(id,keepScroll){
+  const t=TASK[id]; S.task=id; const steps=taskSteps(t), st=S.tstate[id]||{}, done=st.estado==="hecha"?steps.map((_,i)=>i):(st.pasos||[]);
+  const regs=S.entries.filter(e=>e.tarea===id), after=TASKS.filter(x=>x.deps.includes(id)), s=tst(id);
+  $("task-card").innerHTML=`
+    <div class="row" style="justify-content:space-between;align-items:flex-start">
+      <div style="min-width:0"><div class="row" style="gap:8px"><span class="mono muted">Tarea ${t.id}</span>${et(taskStage(t))}${t.slack===0?'<span class="crit">Sin holgura</span>':""}</div><h2>${esc(t.name)}</h2></div>${stChip(t)}
+    </div>
+    <div class="kv"><span><b>Semanas:</b> <span class="mono">${t.from===t.to?t.from:t.from+" a "+t.to}</span></span><span><b>Fechas:</b> ${esc(t.dates)} 2027</span><span><b>Duración:</b> ${t.dur} sem.</span><span><b>Holgura:</b> ${t.slack} sem.</span><span><b>Inicio límite:</b> ${esc(t.limit)}</span></div>
+    <div class="field"><span class="lbl">Depende de</span><div class="deps">${t.deps.length?t.deps.map(d=>`<button type="button" class="ghost" data-task="${d}">${d} · ${esc(TASK[d].name)} ${tst(d)==="hecha"?"✓":""}</button>`).join(""):'<span class="small muted">Ninguna: es la primera.</span>'}</div></div>
+    <div class="field"><span class="lbl">Habilita</span><div class="deps">${after.length?after.map(d=>`<button type="button" class="ghost" data-task="${d.id}">${d.id} · ${esc(d.name)}</button>`).join(""):'<span class="small muted">Es la última: la entrega.</span>'}</div></div>
+    <div class="field"><span class="lbl">Pasos</span>
+      <ul class="steps" id="tk-steps">${steps.map((p,i)=>`<li><label><input type="checkbox" data-step="${i}" ${done.includes(i)?"checked":""}> <span>${esc(p)}</span></label></li>`).join("")}</ul></div>
+    ${WEEKS.filter(w=>w[6].includes(id)&&BUY[w[0]]).map(w=>`<span class="buy">${esc(BUY[w[0]])}</span>`).join("")}
+    <div class="grid2">
+      <div class="field"><label for="tk-state">Estado</label><select id="tk-state">${["porhacer","encurso","hecha"].map(k=>`<option value="${k}" ${s===k?"selected":""}>${ST_LABEL[k]}</option>`).join("")}</select></div>
+      <div class="field"><label for="tk-group">Grupo a cargo</label><input id="tk-group" placeholder="Ej.: 6° 2ª, grupo B" value="${esc(st.grupo||"")}"></div>
+    </div>
+    ${st.actualizadoPor?`<div class="small muted">Último cambio: ${esc(st.actualizadoPor)}, ${esc(fmtDT(st.actualizado))}</div>`:""}
+    <div class="row"><button type="button" class="primary" data-log="${id}">Registrar avance de esta tarea</button></div>
+    <div class="field"><span class="lbl">Registros de esta tarea (${regs.length})</span>
+      ${regs.length?`<div class="log">${regs.map(e=>entryHtml(e,false)).join("")}</div>`:'<div class="empty">Todavía no hay registros de esta tarea.</div>'}
+    </div>`;
+  $("tk-state").addEventListener("change",ev=>{ const v=ev.target.value; saveTask(id,{estado:v}); });
+  $("tk-group").addEventListener("change",ev=>saveTask(id,{grupo:ev.target.value.trim()}));
+  $("tk-steps").addEventListener("change",()=>{
+    const p=[...document.querySelectorAll("#tk-steps [data-step]:checked")].map(x=>+x.dataset.step);
+    saveTask(id,{pasos:p,...(p.length&&tst(id)==="porhacer"?{estado:"encurso"}:{})});
+  });
+  if(!keepScroll) showSub("tarea");
+}
+document.addEventListener("click",e=>{
+  const b=e.target.closest("[data-task]"); if(b && !b.disabled && b.closest("#view-main")){ e.preventDefault(); openTask(b.dataset.task); return; }
+  const l=e.target.closest("[data-log]"); if(l){ showSub("registro"); $("e-task").value=l.dataset.log; }
+});
+$("task-back").addEventListener("click",e=>{ e.preventDefault(); showSub("tareas"); });
+
+/* ---------- Alumnos (docente) ---------- */
+function renderPeople(){
+  if(S.role!=="docente") return;
+  const ps=S.people, pend=ps.filter(p=>p.estado==="pendiente"), ok=ps.filter(p=>p.estado==="aprobado");
+  $("tile-alumnos").textContent = pend.length ? `${pend.length} pedido${pend.length>1?"s":""} de acceso esperando.` : `${ok.length} alumnos en el proyecto.`;
+  $("people-pend").innerHTML = pend.length ? pend.map(p=>`<div class="person"><div style="min-width:0"><b>${esc(p.nombre)}</b> <span class="small muted">${esc(p.curso||"")}</span><div class="small muted mono" style="overflow-wrap:anywhere">${esc(p.email)} · ${esc(fmtDT(p.fecha))}</div></div>
+      <div class="row"><button type="button" class="primary" data-ok="${esc(p.id)}">Aceptar</button><button type="button" class="danger" data-no="${esc(p.id)}">Rechazar</button></div></div>`).join("")
+    : `<div class="small muted">No hay pedidos pendientes.</div>`;
+  $("people-ok").innerHTML = ok.length ? ok.map(p=>{ const c=S.entries.filter(e=>e.autorId===p.id).length;
+    return `<div class="person"><div style="min-width:0"><b>${esc(p.nombre)}</b> <span class="small muted">${esc(p.curso||"")}</span><div class="small muted mono" style="overflow-wrap:anywhere">${esc(p.email)}</div></div>
+      <div class="row"><span class="small">${c} registro${c===1?"":"s"}</span><button type="button" class="ghost small" data-no="${esc(p.id)}">Quitar acceso</button></div></div>`; }).join("")
+    : `<div class="small muted">Todavía no hay alumnos aceptados.</div>`;
+}
+document.querySelector('[data-sub="alumnos"]').addEventListener("click",e=>{
+  const b=e.target.closest("[data-ok],[data-no]"); if(!b) return; b.disabled=true;
+  updateDoc(doc(fs,"usuarios/"+(b.dataset.ok||b.dataset.no)),{estado:b.dataset.ok?"aprobado":"rechazado",revisado:now(),revisadoPor:S.name}).catch(()=>{ b.disabled=false; });
+});
+
+/* ---------- Descarga de la carpeta ---------- */
+["dl-range","dl-order","dl-which","dl-from","dl-to"].forEach(id=>$(id).addEventListener("change",()=>{ $("dl-dates").hidden=$("dl-range").value!=="custom"; renderZip(); }));
+function dlList(){
+  const r=$("dl-range").value, d=new Date(), mStart=ymd(new Date(d.getFullYear(),d.getMonth(),1));
+  let L=S.entries.filter(e=>$("dl-which").value!=="rev"||e.revisado);
+  if(r==="month") L=L.filter(e=>e.fecha>=mStart);
+  if(r==="custom"){ const a=$("dl-from").value, b=$("dl-to").value; L=L.filter(e=>(!a||e.fecha>=a)&&(!b||e.fecha<=b)); }
+  const bySys=$("dl-order").value==="sys";
+  return [...L].sort((a,b)=>(bySys?SISTEMAS.indexOf(a.sistema)-SISTEMAS.indexOf(b.sistema):0)||a.fecha.localeCompare(b.fecha)||a.creado.localeCompare(b.creado));
+}
+function renderZip(){
+  const L=dlList(), ph=L.reduce((n,e)=>n+(e.fotos||[]).length,0), sys=new Set(L.map(e=>e.sistema)).size;
+  const mb=v=>v<1?`${Math.max(1,Math.round(v*1000))} KB`:`${v.toFixed(1).replace(".",",")} MB`;
+  $("zip").innerHTML=`
+    <div class="zrow"><code>Carpeta_de_campo_ZS-HCW.pdf</code><span class="sz">≈ ${mb(.1+ph*.2)}</span>
+      <span class="d">Portada, índice por sistema y ${L.length} registros, uno por hoja con sus fotos, autor y fecha.</span></div>
+    <div class="zrow"><code>Fotos/&lt;sistema&gt;/&lt;fecha&gt;_&lt;título&gt;_01.jpg</code><span class="sz">≈ ${mb(ph*.45)}</span>
+      <span class="d">Las ${ph} fotos como se subieron, en ${sys} carpetas por sistema.</span></div>
+    <div class="zrow"><code>Registros_ZS-HCW.xlsx</code><span class="sz">≈ ${mb(.02+L.length*.001)}</span>
+      <span class="d">Una fila por registro con todos los campos, para reordenarlos al armar el manual.</span></div>`;
+}
+async function fetchPhoto(id,token){
+  const r=await fetch(CFG.fotosScript,{method:"POST",body:JSON.stringify({accion:"foto",idToken:token,id})}).then(x=>x.json());
+  if(!r.ok) throw new Error(r.error||"no se pudo bajar una foto");
+  return r.data;
+}
+async function buildPdf(L,photos){
+  const {jsPDF}=window.jspdf, pdf=new jsPDF({unit:"mm",format:"a4"}), W=210, H=297, M=18;
+  const INK=[22,32,42], MUT=[90,103,117], ACC=[217,83,30];
+  const STRIPES=[[246,195,59],[240,138,36],[216,38,46],[122,19,53]];
+  // Portada
+  pdf.setTextColor(...MUT); pdf.setFont("helvetica","bold"); pdf.setFontSize(9); pdf.text("PROYECTO DE RESTAURACIÓN · EET N°7 TALLER REGIONAL QUILMES",M,40);
+  pdf.setTextColor(...INK); pdf.setFontSize(40); pdf.text("Proyecto S62",M,62); pdf.setFontSize(28); pdf.text("ZS-HCW",M,76);
+  pdf.setFont("helvetica","normal"); pdf.setFontSize(13); pdf.text("Carpeta de campo · Sikorsky S-62A, serie M62-003",M,88);
+  const fechas=L.map(e=>e.fecha).sort();
+  pdf.setFontSize(11); pdf.setTextColor(...MUT);
+  pdf.text(`${L.length} registros · ${photos} fotos · ${fechas.length?`del ${fmtD(fechas[0])} al ${fmtD(fechas[fechas.length-1])}`:""}`,M,100);
+  pdf.text(`Generada el ${new Date().toLocaleDateString("es-AR")} desde la app Proyecto S62`,M,107);
+  STRIPES.forEach((c,i)=>{ pdf.setFillColor(...c); pdf.rect(0,H-28+i*7,W,7,"F"); });
+  // Índice (se completa al final con los números de hoja)
+  pdf.addPage(); const indexPage=pdf.getNumberOfPages();
+  const chapters=[]; let lastSys=null;
+  const bySys=$("dl-order").value==="sys";
+  for(const e of L){
+    pdf.addPage();
+    if(bySys && e.sistema!==lastSys){ chapters.push([e.sistema,pdf.getNumberOfPages()]); lastSys=e.sistema; }
+    const cap=bySys?`Cap. ${chapters.length} · ${e.sistema}`:e.sistema;
+    pdf.setFont("helvetica","bold"); pdf.setFontSize(13); pdf.setTextColor(...INK); pdf.text("Proyecto S62 · ZS-HCW",M,16);
+    pdf.setFont("helvetica","normal"); pdf.setFontSize(8); pdf.setTextColor(...MUT); pdf.text(["Carpeta de campo",cap],W-M,12,{align:"right"});
+    pdf.setDrawColor(...ACC); pdf.setLineWidth(.8); pdf.line(M,19,W-M,19);
+    let y=29;
+    pdf.setFont("helvetica","bold"); pdf.setFontSize(15); pdf.setTextColor(...INK);
+    const tl=pdf.splitTextToSize(e.titulo,W-2*M); pdf.text(tl,M,y); y+=tl.length*6.5+2;
+    const meta=[["Fecha",fmtD(e.fecha)],["Tipo",KIND[e.tipo]||""],["Ubicación",e.ubicacion||"–"],["Cargó",e.autor||""],["Trabajó con",e.con||"–"],["Tiempo",e.tiempo?hrs(e.tiempo)+" h":"–"],
+      ["Tarea",e.tarea&&TASK[e.tarea]?`${e.tarea} · ${TASK[e.tarea].name}`:"–"],["Sistema",e.sistema],["Revisión",e.revisado?"Revisado por el docente":"Sin revisar"]];
+    meta.forEach(([k,v],i)=>{ const x=M+(i%3)*((W-2*M)/3), yy=y+Math.floor(i/3)*10;
+      pdf.setFont("helvetica","bold"); pdf.setFontSize(9); pdf.setTextColor(...INK); pdf.text(pdf.splitTextToSize(String(v),(W-2*M)/3-3)[0],x,yy);
+      pdf.setFont("helvetica","normal"); pdf.setFontSize(7.5); pdf.setTextColor(...MUT); pdf.text(k,x,yy+3.5); });
+    y+=32;
+    pdf.setFont("helvetica","normal"); pdf.setFontSize(10.5); pdf.setTextColor(...INK);
+    const body=pdf.splitTextToSize(e.texto||"",W-2*M); pdf.text(body,M,y); y+=body.length*5+3;
+    if(e.materiales||e.herramientas){ pdf.setFontSize(9.5); const t=pdf.splitTextToSize([e.materiales?"Materiales: "+e.materiales:"",e.herramientas?"Herramientas: "+e.herramientas:""].filter(Boolean).join("   ·   "),W-2*M); pdf.text(t,M,y); y+=t.length*4.5+4; }
+    // Fotos en dos columnas
+    const cw=(W-2*M-6)/2;
+    for(const [i,f] of (e.fotos||[]).entries()){
+      if(!f._b64) continue;
+      const ratio=(f.h&&f.w)?f.h/f.w:.75, ch=Math.min(cw*ratio,95);
+      if(i%2===0 && y+ch>H-20){ pdf.addPage(); y=24; }
+      const x=M+(i%2)*(cw+6);
+      pdf.addImage("data:image/jpeg;base64,"+f._b64,"JPEG",x,y,Math.min(cw,ch/ratio),ch,undefined,"FAST");
+      if(f.tag){ pdf.setFillColor(...INK); pdf.rect(x,y,16,5,"F"); pdf.setTextColor(255,255,255); pdf.setFontSize(7); pdf.text(f.tag.toUpperCase(),x+1.5,y+3.5); }
+      if(i%2===1 || i===(e.fotos.length-1)) y+=ch+5;
+    }
+  }
+  // Índice
+  pdf.setPage(indexPage);
+  pdf.setFont("helvetica","bold"); pdf.setFontSize(22); pdf.setTextColor(...INK); pdf.text("Índice",M,30);
+  pdf.setFontSize(11); let iy=44;
+  const rows=bySys?chapters.map(([s,p],i)=>[`${i+1}. ${s}`,p]):[["Registros en orden de fecha",3]];
+  rows.forEach(([t,p])=>{ pdf.setFont("helvetica","normal"); pdf.setTextColor(...INK); pdf.text(t,M,iy); pdf.setTextColor(...MUT); pdf.text(`hoja ${p}`,W-M,iy,{align:"right"}); iy+=8; });
+  // Pie con número de hoja
+  const N=pdf.getNumberOfPages();
+  for(let p=2;p<=N;p++){ pdf.setPage(p); pdf.setDrawColor(210,217,224); pdf.setLineWidth(.2); pdf.line(M,H-14,W-M,H-14);
+    pdf.setFont("helvetica","normal"); pdf.setFontSize(7.5); pdf.setTextColor(...MUT); pdf.text("SIKORSKY S-62 · ZS-HCW · EET N°7 QUILMES",M,H-9); pdf.text(`Hoja ${p} de ${N}`,W-M,H-9,{align:"right"}); }
+  return pdf.output("blob");
+}
+function saveFile(blob,name){ const a=document.createElement("a"); a.href=URL.createObjectURL(blob); a.download=name; document.body.append(a); a.click(); a.remove(); setTimeout(()=>URL.revokeObjectURL(a.href),20000); }
+async function download(withZip){
+  const L=dlList(); if(!L.length) return msg("dl-msg","No hay registros para ese período.","err");
+  if(!CFG.fotosScript) return msg("dl-msg","Falta configurar el script de fotos en config.js.","err");
+  if(!navigator.onLine) return msg("dl-msg","Necesitás conexión para bajar las fotos.","err");
+  const btns=[$("dl-btn"),$("dl-pdf")]; btns.forEach(b=>b.disabled=true);
+  try{
+    const token=await auth.currentUser.getIdToken(), all=L.flatMap(e=>(e.fotos||[]).map(f=>({e,f}))).filter(x=>x.f.id);
+    let n=0; const copies=L.map(e=>({...e,fotos:(e.fotos||[]).map(f=>({...f}))})), map=new Map();
+    copies.forEach(e=>e.fotos.forEach(f=>{ if(f.id) map.set(f.id,f); }));
+    // De a cuatro fotos por vez para no saturar el script
+    const queue=[...map.values()];
+    await Promise.all([0,1,2,3].map(async()=>{ while(queue.length){ const f=queue.shift(); f._b64=await fetchPhoto(f.id,token); n++; msg("dl-msg",`Bajando fotos: ${n} de ${map.size}…`); } }));
+    msg("dl-msg","Armando el PDF…");
+    const pdf=await buildPdf(copies,all.length);
+    const stamp=ymd(new Date());
+    if(!withZip){ saveFile(pdf,`Carpeta_de_campo_ZS-HCW_${stamp}.pdf`); msg("dl-msg","Listo.","ok"); return; }
+    msg("dl-msg","Armando el ZIP…");
+    const zip=new JSZip(); zip.file("Carpeta_de_campo_ZS-HCW.pdf",pdf);
+    copies.forEach(e=>e.fotos.forEach((f,i)=>{ if(f._b64) zip.file(`Fotos/${slug(e.sistema)}/${e.fecha}_${slug(e.titulo)}_${pad(i+1)}.jpg`,f._b64,{base64:true}); }));
+    const rows=copies.map(e=>({Fecha:e.fecha,Tipo:KIND[e.tipo]||e.tipo,Tarea:e.tarea?`${e.tarea} · ${TASK[e.tarea]?.name||""}`:"",Sistema:e.sistema,"Ubicación":e.ubicacion,"Título":e.titulo,"Descripción":e.texto,
+      "Tiempo (h)":e.tiempo||"",Materiales:e.materiales,Herramientas:e.herramientas,"Trabajó con":e.con,"Cargó":e.autor,Revisado:e.revisado?"Sí":"No",Fotos:(e.fotos||[]).length,
+      "Enlaces a las fotos":(e.fotos||[]).filter(f=>f.id).map(f=>`https://drive.google.com/file/d/${f.id}/view`).join(" ")}));
+    const wb=XLSX.utils.book_new(); XLSX.utils.book_append_sheet(wb,XLSX.utils.json_to_sheet(rows),"Registros");
+    zip.file("Registros_ZS-HCW.xlsx",XLSX.write(wb,{type:"array",bookType:"xlsx"}));
+    saveFile(await zip.generateAsync({type:"blob"}),`Carpeta_ZS-HCW_${stamp}.zip`);
+    msg("dl-msg","Listo.","ok");
+  }catch(err){ msg("dl-msg","No se pudo armar la carpeta: "+(err.message||err),"err"); }
+  btns.forEach(b=>b.disabled=false);
+}
+$("dl-btn").addEventListener("click",()=>download(true));
+$("dl-pdf").addEventListener("click",()=>download(false));
+
+// Fotos que quedaron en la cola de otra sesión: mostrarlas mientras esperan
+IDB.keys().then(async ks=>{ for(const k of ks){ const it=await IDB.get(k); if(it) S.local.set(k,URL.createObjectURL(it.blob)); } updateSync(); }).catch(()=>{});
+</script>
+</body>
+</html>

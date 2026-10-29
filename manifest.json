@@ -1,0 +1,15 @@
+{
+  "name": "Proyecto S62",
+  "short_name": "Proyecto S62",
+  "description": "Carpeta de campo de la restauración del Sikorsky S-62 ZS-HCW, EET N°7 Quilmes.",
+  "start_url": "./",
+  "display": "standalone",
+  "background_color": "#eceff3",
+  "theme_color": "#16202a",
+  "lang": "es",
+  "icons": [
+    {"src": "icon.svg", "sizes": "any", "type": "image/svg+xml"},
+    {"src": "icon-192.png", "sizes": "192x192", "type": "image/png"},
+    {"src": "icon-512.png", "sizes": "512x512", "type": "image/png"}
+  ]
+}
