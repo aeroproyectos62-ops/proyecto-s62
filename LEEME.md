@@ -5,7 +5,7 @@ Los alumnos del proyecto cargan día a día las tareas y observaciones con fotos
 marzo a noviembre de 2027 y al final se descarga todo junto: PDF de la carpeta, fotos y planilla.
 
 - **Alumno**: entra con su cuenta de Google. La primera vez pide acceso y el docente lo acepta. Después carga registros, marca pasos de las tareas y ve todo lo cargado.
-- **Docente**: entra con Google (cuentas listadas en `config.js` y `firestore.rules`). Acepta alumnos, marca registros como revisados y descarga la carpeta.
+- **Docente**: entra con Google. Los docentes principales están en `config.js`, `firestore.rules` y `fotos-drive.gs`; los demás se agregan desde la app, en *Alumnos y docentes*. Aceptan alumnos, marcan registros como revisados y descargan la carpeta.
 - **Sin señal**: los registros quedan guardados en el celular y se suben solos cuando vuelve la conexión. Las fotos esperan en una cola local.
 
 Todo es gratis y **no pide tarjeta**: la página está en GitHub Pages, el login y los datos en Firebase (plan Spark, el gratuito) y las fotos en el Google Drive de la cuenta del proyecto.
@@ -40,6 +40,7 @@ Todo es gratis y **no pide tarjeta**: la página está en GitHub Pages, el login
 
 ## Datos
 
+- `docentes/{correo}`: docentes agregados desde la app.
 - `usuarios/{uid}`: pedidos de acceso de los alumnos (`pendiente`, `aprobado` o `rechazado`).
 - `registros/{id}`: cada registro, con sus fotos como identificadores de archivos de Drive.
 - `tareas/{A..AB}`: estado, pasos tildados y grupo a cargo de cada tarea del cronograma.

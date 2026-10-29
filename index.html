@@ -257,7 +257,7 @@ label.photo-add b{font-family:var(--display);font-size:1.6rem;line-height:1;colo
       <button type="button" class="tile" data-go="bitacora"><b>Calendario</b><span>Lo cargado día por día, con fotos.</span></button>
       <button type="button" class="tile" data-go="sistemas"><b>Por sistema</b><span>Registros agrupados por zona del helicóptero.</span></button>
       <button type="button" class="tile" data-go="descargar"><b>Descargar carpeta</b><span>PDF, fotos originales y planilla en un ZIP.</span></button>
-      <button type="button" class="tile staff-only" data-go="alumnos"><b>Alumnos</b><span id="tile-alumnos">Aceptar pedidos y ver quién cargó.</span></button>
+      <button type="button" class="tile staff-only" data-go="alumnos"><b>Alumnos y docentes</b><span id="tile-alumnos">Aceptar pedidos y ver quién cargó.</span></button>
     </div>
     <a href="#" id="sub-back" class="back" hidden>← Volver al menú</a>
 
@@ -404,6 +404,16 @@ label.photo-add b{font-family:var(--display);font-size:1.6rem;line-height:1;colo
         <h2>Alumnos del proyecto</h2>
         <div id="people-ok" class="people"></div>
       </div>
+      <div class="panel">
+        <h2>Docentes</h2>
+        <div class="small muted">Los docentes aceptan alumnos, marcan registros como revisados y pueden agregar a otros docentes. Entran con la cuenta de Google de este correo.</div>
+        <div id="docentes" class="people"></div>
+        <form id="doc-form" class="grid2">
+          <div class="field"><label for="doc-name">Nombre y apellido</label><input id="doc-name" autocomplete="off"></div>
+          <div class="field"><label for="doc-mail">Correo de Google</label><input id="doc-mail" type="email" autocomplete="off" placeholder="nombre@gmail.com"></div>
+          <div class="row" style="grid-column:1/-1"><button type="submit">Agregar docente</button><span id="doc-msg" class="msg"></span></div>
+        </form>
+      </div>
     </div>
   </section>
 </div>
@@ -439,7 +449,13 @@ const fbApp = initializeApp(CFG.firebase);
 const auth = getAuth(fbApp);
 // Cache local: los registros se guardan en el celular y se suben cuando hay señal
 const fs = initializeFirestore(fbApp,{localCache:persistentLocalCache({tabManager:persistentMultipleTabManager()})});
+// Docentes principales: config.js. Los demás los agrega un docente desde la app (colección "docentes", id = correo).
 const isDocenteEmail = u => !!u && u.emailVerified && (CFG.docentes||[]).map(x=>x.toLowerCase()).includes((u.email||"").toLowerCase());
+async function isDocente(u){
+  if(isDocenteEmail(u)) return true;
+  if(!u || !u.emailVerified || !u.email) return false;
+  try{ return (await getDoc(doc(fs,"docentes/"+u.email.toLowerCase()))).exists(); }catch(_){ return false; }
+}
 
 if("serviceWorker" in navigator) navigator.serviceWorker.register("sw.js").catch(()=>{});
 
@@ -588,10 +604,10 @@ document.querySelectorAll(".door[data-role]").forEach(b=>b.addEventListener("cli
 async function enterAs(role,u){
   S.uid=u.uid; S.user=u;
   if(role==="docente"){
-    if(!isDocenteEmail(u)){ msg("login-msg",`La cuenta ${u.email} no está cargada como docente.`,"err"); return; }
+    if(!(await isDocente(u))){ msg("login-msg",`La cuenta ${u.email} no está cargada como docente. Pedile a un docente del proyecto que la agregue.`,"err"); return; }
     return start("docente",u.displayName||u.email);
   }
-  if(isDocenteEmail(u)) return start("docente",u.displayName||u.email);
+  if(await isDocente(u)) return start("docente",u.displayName||u.email);
   let d=null;
   try{ const snap=await getDoc(doc(fs,"usuarios/"+u.uid)); d=snap.exists()?snap.data():null; }
   catch(_){ msg("login-msg","No se pudo comprobar tu acceso. Revisá la conexión y probá de nuevo.","err"); return; }
@@ -639,7 +655,11 @@ function start(role,name){
   S.unsubs.push(onSnapshot(collection(fs,"tareas"),snap=>{
     S.tstate=Object.fromEntries(snap.docs.map(d=>[d.id,d.data()])); renderTasks(); if(S.task && !$("task-card").closest("[hidden]")) openTask(S.task,true);
   },()=>{}));
-  if(role==="docente") S.unsubs.push(onSnapshot(collection(fs,"usuarios"),snap=>{ S.people=snap.docs.map(d=>({id:d.id,...d.data()})); renderPeople(); },()=>{}));
+  if(role==="docente"){
+    S.unsubs.push(onSnapshot(collection(fs,"usuarios"),snap=>{ S.people=snap.docs.map(d=>({id:d.id,...d.data()})); renderPeople(); },()=>{}));
+    S.unsubs.push(onSnapshot(collection(fs,"docentes"),snap=>{ S.docentes=snap.docs.map(d=>({id:d.id,...d.data()})); renderDocentes(); },()=>{}));
+    renderDocentes();
+  }
   renderAll(); processQueue();
 }
 function stop(){ S.unsubs.forEach(f=>f()); S.unsubs=[]; S.role=null; S.entries=[]; S.tstate={}; S.people=[]; document.body.classList.remove("role-docente"); }
@@ -959,7 +979,29 @@ function renderPeople(){
       <div class="row"><span class="small">${c} registro${c===1?"":"s"}</span><button type="button" class="ghost small" data-no="${esc(p.id)}">Quitar acceso</button></div></div>`; }).join("")
     : `<div class="small muted">Todavía no hay alumnos aceptados.</div>`;
 }
+function renderDocentes(){
+  if(S.role!=="docente") return;
+  const fijos=(CFG.docentes||[]).map(x=>x.toLowerCase()), extra=(S.docentes||[]).filter(d=>!fijos.includes(d.id));
+  $("docentes").innerHTML = fijos.map(m=>`<div class="person"><div style="min-width:0"><b>${esc(m)}</b><div class="small muted">Docente principal (se cambia en config.js)</div></div></div>`).join("")
+    + extra.map(d=>`<div class="person"><div style="min-width:0"><b>${esc(d.nombre||d.id)}</b><div class="small muted mono" style="overflow-wrap:anywhere">${esc(d.id)} · agregó ${esc(d.agregadoPor||"")}</div></div>
+      ${d.id===(S.user?.email||"").toLowerCase()?"":`<button type="button" class="ghost small" data-deldoc="${esc(d.id)}">Quitar</button>`}</div>`).join("");
+}
+$("doc-form").addEventListener("submit",async e=>{
+  e.preventDefault();
+  const mail=$("doc-mail").value.trim().toLowerCase(), nombre=$("doc-name").value.trim().replace(/\s+/g," ");
+  if(!/^[^\s@/]+@[^\s@/]+\.[^\s@/]+$/.test(mail)) return msg("doc-msg","Escribí un correo válido.","err");
+  if(nombre.length<3) return msg("doc-msg","Escribí el nombre y apellido.","err");
+  if((CFG.docentes||[]).map(x=>x.toLowerCase()).includes(mail) || (S.docentes||[]).some(d=>d.id===mail)) return msg("doc-msg","Ese correo ya es docente.","err");
+  try{
+    await setDoc(doc(fs,"docentes/"+mail),{nombre,agregadoPor:S.name,fecha:now()});
+    $("doc-mail").value=$("doc-name").value=""; msg("doc-msg","Agregado. Ya puede entrar como docente.","ok");
+  }catch(err){ msg("doc-msg","No se pudo agregar: "+(err.code||err.message),"err"); }
+});
 document.querySelector('[data-sub="alumnos"]').addEventListener("click",e=>{
+  const dd=e.target.closest("[data-deldoc]");
+  if(dd){ const id=dd.dataset.deldoc;
+    if(!confirmDel.has("doc:"+id)){ confirmDel.add("doc:"+id); dd.textContent="Tocá de nuevo para quitar"; dd.classList.add("danger"); setTimeout(()=>{ confirmDel.delete("doc:"+id); dd.textContent="Quitar"; dd.classList.remove("danger"); },4000); return; }
+    deleteDoc(doc(fs,"docentes/"+id)).catch(()=>{}); return; }
   const b=e.target.closest("[data-ok],[data-no]"); if(!b) return; b.disabled=true;
   updateDoc(doc(fs,"usuarios/"+(b.dataset.ok||b.dataset.no)),{estado:b.dataset.ok?"aprobado":"rechazado",revisado:now(),revisadoPor:S.name}).catch(()=>{ b.disabled=false; });
 });

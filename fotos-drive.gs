@@ -7,7 +7,8 @@
 
 const FIREBASE_API_KEY = 'AIzaSyC70wSXia1kIa5681aew3cTP3veqm5e-lU';      // apiKey de firebaseConfig
 const FIREBASE_PROJECT = 'proyectos62-65acd';   // projectId de firebaseConfig
-// Mantener igual a docentes en config.js y firestore.rules
+// Docentes principales: mantener igual a docentes en config.js y firestore.rules
+// (los que se agregan desde la app no hace falta cargarlos acá)
 const DOCENTES = ['agustinsekul@impatrq.com', 'aero.proyecto.s62@gmail.com'];
 const CARPETA = 'Proyecto S62 - Fotos';
 
@@ -40,6 +41,12 @@ function verificar_(idToken) {
   const u = cuenta_(idToken);
   const email = String(u.email || '').toLowerCase();
   if (u.emailVerified && DOCENTES.map(x => x.toLowerCase()).indexOf(email) >= 0) return {uid: u.localId, email: email};
+  // Docentes agregados desde la app
+  const base = 'https://firestore.googleapis.com/v1/projects/' + FIREBASE_PROJECT + '/databases/(default)/documents/';
+  if (u.emailVerified) {
+    const dd = UrlFetchApp.fetch(base + 'docentes/' + encodeURIComponent(email), {headers: {Authorization: 'Bearer ' + idToken}, muteHttpExceptions: true});
+    if (dd.getResponseCode() === 200) return {uid: u.localId, email: email};
+  }
   const f = UrlFetchApp.fetch('https://firestore.googleapis.com/v1/projects/' + FIREBASE_PROJECT +
     '/databases/(default)/documents/usuarios/' + u.localId, {headers: {Authorization: 'Bearer ' + idToken}, muteHttpExceptions: true});
   const doc = JSON.parse(f.getContentText());

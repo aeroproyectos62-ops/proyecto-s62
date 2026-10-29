@@ -2,16 +2,24 @@ rules_version = '2';
 service cloud.firestore {
   match /databases/{database}/documents {
     function signedIn() { return request.auth != null; }
-    // Mantener esta lista igual a docentes en config.js
+    // Docentes principales: mantener esta lista igual a docentes en config.js.
+    // Los demás los agrega un docente desde la app (colección "docentes", id = correo en minúsculas).
     function isDocente() {
       return signedIn() && request.auth.token.email_verified == true
-        && request.auth.token.email in ['agustinsekul@impatrq.com', 'aero.proyecto.s62@gmail.com'];
+        && (request.auth.token.email in ['agustinsekul@impatrq.com', 'aero.proyecto.s62@gmail.com']
+          || exists(/databases/$(database)/documents/docentes/$(request.auth.token.email.lower())));
     }
     function isAlumno() {
       return signedIn() && exists(/databases/$(database)/documents/usuarios/$(request.auth.uid))
         && get(/databases/$(database)/documents/usuarios/$(request.auth.uid)).data.estado == 'aprobado';
     }
     function miembro() { return isDocente() || isAlumno(); }
+
+    // Docentes agregados desde la app
+    match /docentes/{email} {
+      allow read: if signedIn();
+      allow write: if isDocente();
+    }
 
     // Alumnos: piden acceso la primera vez y el docente los acepta
     match /usuarios/{uid} {
