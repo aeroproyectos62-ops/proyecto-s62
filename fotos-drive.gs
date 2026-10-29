@@ -5,8 +5,8 @@
 // se pega en config.js como fotosScript. Solo acepta pedidos de miembros del proyecto:
 // cada pedido trae el token de inicio de sesión de Firebase y se verifica acá.
 
-const FIREBASE_API_KEY = 'PEGAR_API_KEY';      // apiKey de firebaseConfig
-const FIREBASE_PROJECT = 'PEGAR_PROJECT_ID';   // projectId de firebaseConfig
+const FIREBASE_API_KEY = 'AIzaSyC70wSXia1kIa5681aew3cTP3veqm5e-lU';      // apiKey de firebaseConfig
+const FIREBASE_PROJECT = 'proyectos62-65acd';   // projectId de firebaseConfig
 // Mantener igual a docentes en config.js y firestore.rules
 const DOCENTES = ['agustinsekul@impatrq.com', 'aero.proyecto.s62@gmail.com'];
 const CARPETA = 'Proyecto S62 - Fotos';
