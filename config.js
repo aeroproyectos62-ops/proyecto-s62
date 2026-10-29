@@ -12,5 +12,5 @@ window.APP_CONFIG = {
   // Cuentas de Google de los docentes (deben coincidir con firestore.rules y con DOCENTES en fotos-drive.gs).
   docentes: ["agustinsekul@impatrq.com", "aero.proyecto.s62@gmail.com"],
   // URL del script de Google que guarda las fotos en Drive (ver fotos-drive.gs).
-  fotosScript: ""
+  fotosScript: "https://script.google.com/macros/s/AKfycbw2mt3OpkgzO_8NFp3V9iYSzepDW-B4b-KncfQ8Hluy7GfsuV-YIKzWFqbT5S8Tcw/exec"
 };
