@@ -1164,72 +1164,102 @@ $("rv-add").addEventListener("submit",e=>{
   $("rv-add-name").value=""; msg("rv-add-msg","");
   S.relev[id]={id,zona:z,parte:p}; renderRelev(); openPart(id);
 });
-// Informe en PDF: portada, resumen, lista de trabajos y una ficha por parte con sus fotos
+// Informe en PDF con el diseño Sea King de los PDF del proyecto (gris naval, amarillo y bandera)
+// Foto de portada con el difuminado pintado dentro de la imagen (algunos visores muestran mal las transparencias)
+function seaKingCover(b64){
+  return new Promise(res=>{ const im=new Image(); im.onload=()=>{
+    const W=1680,H=1200,c=document.createElement("canvas"); c.width=W; c.height=H; const g=c.getContext("2d");
+    const r=Math.max(W/im.width,H/im.height), w=im.width*r, h=im.height*r; g.drawImage(im,(W-w)/2,(H-h)/2,w,h);
+    let gr=g.createLinearGradient(0,H*.55,0,H*.85); gr.addColorStop(0,"rgba(242,194,48,0)"); gr.addColorStop(1,"rgba(242,194,48,.85)");
+    g.fillStyle=gr; g.fillRect(0,H*.55,W,H*.45);
+    gr=g.createLinearGradient(0,H*.84,0,H); gr.addColorStop(0,"rgba(94,104,114,0)"); gr.addColorStop(1,"rgba(94,104,114,1)");
+    g.fillStyle=gr; g.fillRect(0,H*.84,W,H*.16);
+    res(c.toDataURL("image/jpeg",.88)); }; im.onerror=()=>res(null); im.src="data:image/jpeg;base64,"+b64; });
+}
 async function buildRelevPdf(parts){
-  const {jsPDF}=window.jspdf, pdf=new jsPDF({unit:"mm",format:"a4"}), W=210, H=297, M=18;
-  const INK=[22,32,42], MUT=[90,103,117], ACC=[217,83,30];
-  const EC={bueno:[30,122,76],regular:[154,100,18],malo:[194,38,38],falta:[90,103,117]};
-  const STRIPES=[[246,195,59],[240,138,36],[216,38,46],[122,19,53]];
+  const {jsPDF}=window.jspdf, pdf=new jsPDF({unit:"mm",format:"a4"}), W=210, H=297, M=16;
+  const GRIS=[94,104,114], OSC=[46,53,59], MED=[138,148,156], CL=[228,231,233], PAPEL=[246,246,243], AM=[242,194,48], CEL=[116,172,223], NEG=[28,31,34], BL=[255,255,255];
+  const EC={bueno:[31,122,77],regular:[183,121,31],malo:[192,57,43],falta:[94,104,114]};
   const done=parts.filter(x=>x.estado), cnt=k=>done.filter(x=>x.estado===k).length;
-  pdf.setTextColor(...MUT); pdf.setFont("helvetica","bold"); pdf.setFontSize(9); pdf.text("PROYECTO DE RESTAURACIÓN · EET N°7 TALLER REGIONAL QUILMES",M,40);
-  pdf.setTextColor(...INK); pdf.setFontSize(34); pdf.text("Relevamiento del estado",M,60); pdf.setFontSize(26); pdf.text("Sikorsky S-62A ZS-HCW",M,74);
-  pdf.setFont("helvetica","normal"); pdf.setFontSize(11); pdf.setTextColor(...MUT);
+  const sorted=[...done].sort((a,b)=>RV_ZONAS.indexOf(a.zona)-RV_ZONAS.indexOf(b.zona));
+  const flag=(x,y,w,h)=>{ [CEL,BL,CEL].forEach((c,i)=>{ pdf.setFillColor(...c); pdf.rect(x+i*w/3,y,w/3+.05,h,"F"); }); };
+  const font=(st,sz,col)=>{ pdf.setFont("helvetica",st); pdf.setFontSize(sz); pdf.setTextColor(...col); };
+  const spaced=(t,x,y,cs,opt)=>{ pdf.setCharSpace(cs); pdf.text(t,x,y,opt); pdf.setCharSpace(0); };
+  const tag=(t,x,y,col,align)=>{ font("bold",8.5,BL); const tw=pdf.getTextWidth(t.toUpperCase())+t.length*.25+4, xx=align==="right"?x-tw:x;
+    pdf.setFillColor(...col); pdf.roundedRect(xx,y-3.6,tw,5,.8,.8,"F"); spaced(t.toUpperCase(),xx+2,y,.25); return tw; };
+  const newPage=()=>{ pdf.addPage(); pdf.setFillColor(...PAPEL); pdf.rect(0,0,W,H,"F"); pdf.setFillColor(...GRIS); pdf.rect(0,0,W,5,"F"); flag(W-M-24,0,24,5); };
+  const heading=(kicker,title,y)=>{ font("bold",9.5,GRIS); spaced(kicker.toUpperCase(),M,y,.8);
+    font("bold",21,OSC); const tl=pdf.splitTextToSize(title.toUpperCase(),W-2*M-40); pdf.text(tl,M,y+9);
+    const yb=y+9+(tl.length-1)*8+3.5; pdf.setFillColor(...AM); pdf.rect(M,yb,38,2.2,"F"); return yb+9; };
+
+  // Portada
+  pdf.setFillColor(...GRIS); pdf.rect(0,0,W,H,"F");
+  const cov=sorted.flatMap(x=>(x.fotos||[]).filter(f=>f._b64).map(f=>({x,f})))[0];
+  const img=cov?await seaKingCover(cov.f._b64):null;
+  if(img) pdf.addImage(img,"JPEG",0,0,W,150,undefined,"FAST");
+  else { pdf.setFillColor(...AM); pdf.rect(0,120,W,20,"F"); }
+  pdf.setFillColor(...AM); pdf.roundedRect(W-M-36,146,36,17,1.5,1.5,"F"); font("bold",30,NEG); pdf.text("S-62",W-M-18,158.5,{align:"center"});
+  font("bold",46,BL); pdf.text("RELEVAMIENTO",M,166); pdf.setTextColor(...AM); pdf.text("DEL ESTADO",M,183);
+  font("normal",15,BL); pdf.text("Estado de cada parte del helicóptero,",M,195); pdf.text("con fotos y trabajos a realizar",M,201.5);
+  flag(M,208,60,4);
+  font("bold",11,AM); spaced("ZS-HCW",M,222,.6); const zw=pdf.getTextWidth("ZS-HCW")+3.5;
+  font("normal",11,BL); spaced("·  Mitsubishi S-62J n.º M62-003  ·  EET N.º 7 Taller Regional Quilmes",M+zw,222,.3);
+  const fotosN=done.reduce((n,x)=>n+(x.fotos||[]).length,0), fechas=done.map(x=>x.actualizado).filter(Boolean).sort();
+  [["bueno","Bueno"],["regular","Regular"],["malo","Malo"],["falta","Falta"]].forEach(([k,l],i)=>{ const bw=(W-2*M-9)/4, x=M+i*(bw+3), y=232;
+    pdf.setFillColor(...OSC); pdf.roundedRect(x,y,bw,20,1.5,1.5,"F"); pdf.setFillColor(...AM); pdf.rect(x,y+18.5,bw,1.5,"F");
+    font("bold",20,AM); pdf.text(String(cnt(k)),x+3.5,y+9.5); pdf.setFillColor(...EC[k]); pdf.rect(x+3.5,y+12.6,2.6,2.6,"F");
+    font("normal",9,BL); pdf.text(l,x+7.6,y+14.8); });
+  font("normal",9.5,[223,227,230]);
   const autores=[...new Set(done.map(x=>x.autor).filter(Boolean))];
-  const fechas=done.map(x=>x.actualizado).filter(Boolean).sort();
-  pdf.text(`${done.length} partes relevadas de ${parts.length} · ${done.reduce((n,x)=>n+(x.fotos||[]).length,0)} fotos`,M,88);
-  if(fechas.length) pdf.text(`Del ${new Date(fechas[0]).toLocaleDateString("es-AR")} al ${new Date(fechas[fechas.length-1]).toLocaleDateString("es-AR")}`,M,95);
-  if(autores.length) pdf.text(pdf.splitTextToSize("Relevó: "+autores.join(", "),W-2*M),M,102);
-  let y=122;
-  [["bueno","Bueno"],["regular","Regular"],["malo","Malo"],["falta","Falta"]].forEach(([k,l],i)=>{ const x=M+i*42;
-    pdf.setFillColor(...EC[k]); pdf.rect(x,y,38,18,"F"); pdf.setTextColor(255,255,255); pdf.setFont("helvetica","bold"); pdf.setFontSize(18); pdf.text(String(cnt(k)),x+4,y+9); pdf.setFontSize(9); pdf.text(l.toUpperCase(),x+4,y+15); });
-  STRIPES.forEach((c,i)=>{ pdf.setFillColor(...c); pdf.rect(0,H-28+i*7,W,7,"F"); });
-  // Lista de trabajos: lo que no está bueno, por prioridad
+  let info=`${done.length} partes relevadas de ${parts.length} · ${fotosN} foto${fotosN===1?"":"s"}`;
+  if(fechas.length) info+=` · del ${new Date(fechas[0]).toLocaleDateString("es-AR")} al ${new Date(fechas[fechas.length-1]).toLocaleDateString("es-AR")}`;
+  pdf.text(info,M,262); if(autores.length) pdf.text(pdf.splitTextToSize("Relevó: "+autores.join(", "),W-2*M).slice(0,2),M,267.5);
+  font("normal",8.5,[223,227,230]); pdf.text(cov?`Foto de portada: ${cov.x.parte} (${cov.x.zona.toLowerCase()}).`:"",M,H-12);
+
+  // Qué hay que hacer: lo que no está bueno, por prioridad
   const order={alta:0,media:1,baja:2,"":3}, todo=done.filter(x=>x.estado!=="bueno"||(x.accion&&x.accion!=="Nada"))
     .sort((a,b)=>(order[a.prioridad||""]-order[b.prioridad||""])||RV_ZONAS.indexOf(a.zona)-RV_ZONAS.indexOf(b.zona));
-  pdf.addPage(); y=24;
-  pdf.setFont("helvetica","bold"); pdf.setFontSize(20); pdf.setTextColor(...INK); pdf.text("Qué hay que hacer",M,y); y+=10;
-  pdf.setFont("helvetica","normal"); pdf.setFontSize(9); pdf.setTextColor(...MUT); pdf.text("Partes en estado regular, malo o faltantes, y las que tienen una acción indicada, ordenadas por prioridad.",M,y); y+=8;
-  const cols=[M,M+52,M+92,M+114,M+148];
-  const head=()=>{ pdf.setFont("helvetica","bold"); pdf.setFontSize(8); pdf.setTextColor(...MUT); ["PARTE","ZONA","ESTADO","ACCIÓN","PRIORIDAD"].forEach((t,i)=>pdf.text(t,cols[i],y)); y+=2; pdf.setDrawColor(...INK); pdf.setLineWidth(.4); pdf.line(M,y,W-M,y); y+=5; };
+  newPage(); let y=heading("Resumen","Qué hay que hacer",20);
+  font("normal",10,NEG); pdf.text(pdf.splitTextToSize("Partes en estado regular, malo o faltantes, y las que tienen una acción indicada, ordenadas por prioridad.",W-2*M),M,y); y+=9;
+  const cols=[M+2.5,M+52,M+90,M+114,M+152];
+  const head=()=>{ pdf.setFillColor(...OSC); pdf.rect(M,y,W-2*M,7,"F"); font("bold",8.5,BL);
+    ["PARTE","ZONA","ESTADO","ACCIÓN","PRIORIDAD"].forEach((t,i)=>spaced(t,cols[i],y+4.7,.4)); y+=7; };
   head();
-  if(!todo.length){ pdf.setFont("helvetica","normal"); pdf.setFontSize(10); pdf.setTextColor(...INK); pdf.text("No hay trabajos pendientes en lo relevado.",M,y); }
+  if(!todo.length){ pdf.setFillColor(...BL); pdf.rect(M,y,W-2*M,9,"F"); font("normal",10,NEG); pdf.text("No hay trabajos pendientes en lo relevado.",cols[0],y+6); }
   todo.forEach(x=>{
-    if(y>H-24){ pdf.addPage(); y=24; head(); }
-    pdf.setFont("helvetica","normal"); pdf.setFontSize(9); pdf.setTextColor(...INK);
-    const pl=pdf.splitTextToSize(x.parte,50), zl=pdf.splitTextToSize(x.zona,38);
-    pdf.text(pl,cols[0],y); pdf.setTextColor(...MUT); pdf.text(zl,cols[1],y);
-    pdf.setTextColor(...EC[x.estado]); pdf.setFont("helvetica","bold"); pdf.text(RV_EST[x.estado],cols[2],y);
-    pdf.setTextColor(...INK); pdf.setFont("helvetica","normal"); pdf.text(pdf.splitTextToSize(x.accion||"–",32),cols[3],y); pdf.text(x.prioridad?RV_PRIO[x.prioridad]:"–",cols[4],y);
-    y+=Math.max(pl.length,zl.length)*4+3; pdf.setDrawColor(210,217,224); pdf.setLineWidth(.2); pdf.line(M,y-2,W-M,y-2); y+=2;
+    font("normal",9.5,NEG); const pl=pdf.splitTextToSize(x.parte,47), zl=pdf.splitTextToSize(x.zona,36), al=pdf.splitTextToSize(x.accion||"–",36);
+    const rh=Math.max(pl.length,zl.length,al.length)*4.2+4;
+    if(y+rh>H-22){ newPage(); y=20; head(); }
+    pdf.setFillColor(...BL); pdf.rect(M,y,W-2*M,rh,"F"); pdf.setDrawColor(...CL); pdf.setLineWidth(.3); pdf.line(M,y+rh,W-M,y+rh);
+    font("normal",9.5,NEG); pdf.text(pl,cols[0],y+5); pdf.setTextColor(...GRIS); pdf.text(zl,cols[1],y+5);
+    tag(RV_EST[x.estado],cols[2],y+5.3,EC[x.estado]);
+    font("normal",9.5,NEG); pdf.text(al,cols[3],y+5); font(x.prioridad==="alta"?"bold":"normal",9.5,NEG); pdf.text(x.prioridad?RV_PRIO[x.prioridad]:"–",cols[4],y+5);
+    y+=rh;
   });
-  // Una ficha por parte, agrupadas por zona
-  const sorted=[...done].sort((a,b)=>RV_ZONAS.indexOf(a.zona)-RV_ZONAS.indexOf(b.zona));
+
+  // Una hoja por parte, agrupadas por zona
   for(const x of sorted){
-    pdf.addPage();
-    pdf.setFont("helvetica","bold"); pdf.setFontSize(13); pdf.setTextColor(...INK); pdf.text("Relevamiento · ZS-HCW",M,16);
-    pdf.setFont("helvetica","normal"); pdf.setFontSize(8); pdf.setTextColor(...MUT); pdf.text(x.zona,W-M,14,{align:"right"});
-    pdf.setDrawColor(...ACC); pdf.setLineWidth(.8); pdf.line(M,19,W-M,19);
-    y=30; pdf.setFont("helvetica","bold"); pdf.setFontSize(16); pdf.setTextColor(...INK);
-    const tl=pdf.splitTextToSize(x.parte,W-2*M-40); pdf.text(tl,M,y);
-    pdf.setFillColor(...EC[x.estado]); pdf.rect(W-M-34,y-6,34,9,"F"); pdf.setTextColor(255,255,255); pdf.setFontSize(10); pdf.text(RV_EST[x.estado].toUpperCase(),W-M-17,y,{align:"center"});
-    y+=tl.length*7+2;
-    [["Qué hay que hacer",x.accion||"–"],["Prioridad",x.prioridad?RV_PRIO[x.prioridad]:"–"],["Relevó",`${x.autor||""}${x.actualizado?", "+new Date(x.actualizado).toLocaleDateString("es-AR"):""}`]].forEach(([k,v],i)=>{
-      const xx=M+i*((W-2*M)/3); pdf.setFont("helvetica","bold"); pdf.setFontSize(9.5); pdf.setTextColor(...INK); pdf.text(pdf.splitTextToSize(v,(W-2*M)/3-3)[0],xx,y);
-      pdf.setFont("helvetica","normal"); pdf.setFontSize(7.5); pdf.setTextColor(...MUT); pdf.text(k,xx,y+3.5); });
-    y+=12; pdf.setFont("helvetica","normal"); pdf.setFontSize(10.5); pdf.setTextColor(...INK);
-    const body=pdf.splitTextToSize(x.comentario||"",W-2*M); pdf.text(body,M,y); y+=body.length*5+4;
-    const cw=(W-2*M-6)/2;
-    for(const [i,f] of (x.fotos||[]).entries()){
-      if(!f._b64) continue;
-      const ratio=(f.h&&f.w)?f.h/f.w:.75, ch=Math.min(cw*ratio,95);
-      if(i%2===0 && y+ch>H-20){ pdf.addPage(); y=24; }
-      pdf.addImage("data:image/jpeg;base64,"+f._b64,"JPEG",M+(i%2)*(cw+6),y,Math.min(cw,ch/ratio),ch,undefined,"FAST");
-      if(i%2===1 || i===x.fotos.length-1) y+=ch+5;
+    newPage(); y=heading(x.zona,x.parte,20); tag(RV_EST[x.estado],W-M,29,EC[x.estado],"right");
+    const rows=[["Estado",RV_EST[x.estado]],["Qué hay que hacer",x.accion||"–"],["Prioridad",x.prioridad?RV_PRIO[x.prioridad]:"–"],
+      ["Relevó",`${x.autor||""}${x.actualizado?", "+new Date(x.actualizado).toLocaleDateString("es-AR"):""}`]];
+    const fh=rows.length*6.2+6; pdf.setFillColor(...BL); pdf.roundedRect(M,y,W-2*M,fh,1.5,1.5,"F"); pdf.setFillColor(...GRIS); pdf.rect(M,y,W-2*M,1.5,"F");
+    rows.forEach(([k,v],i)=>{ const yy=y+7.5+i*6.2; font("bold",8.5,GRIS); spaced(k.toUpperCase(),M+4,yy,.4); font("normal",10,NEG); pdf.text(pdf.splitTextToSize(v,W-2*M-56)[0],M+52,yy); });
+    y+=fh+5;
+    font("normal",10.5,NEG); const body=pdf.splitTextToSize(x.comentario||"",W-2*M-12), bh=body.length*4.8+7;
+    pdf.setFillColor(...BL); pdf.rect(M,y,W-2*M,bh,"F"); pdf.setFillColor(...AM); pdf.rect(M,y,2,bh,"F");
+    font("bold",8.5,GRIS); spaced("COMENTARIO",M+6,y+5,.4); font("normal",10.5,NEG); pdf.text(body,M+6,y+10); y+=bh+8;
+    const fotos=(x.fotos||[]).filter(f=>f._b64), cw=(W-2*M-6)/2, B=1.2;
+    for(const [i,f] of fotos.entries()){
+      const ratio=(f.h&&f.w)?f.h/f.w:.75, ch=Math.min(cw*ratio,95), iw=Math.min(cw,ch/ratio), xx=M+(i%2)*(cw+6);
+      if(i%2===0 && y+ch>H-22){ newPage(); y=20; }
+      pdf.setFillColor(...AM); pdf.roundedRect(xx-B,y-B,iw+2*B,ch+2*B,1.5,1.5,"F");
+      pdf.addImage("data:image/jpeg;base64,"+f._b64,"JPEG",xx,y,iw,ch,undefined,"FAST");
+      if(i%2===1 || i===fotos.length-1) y+=ch+7;
     }
   }
   const N=pdf.getNumberOfPages();
-  for(let p=2;p<=N;p++){ pdf.setPage(p); pdf.setDrawColor(210,217,224); pdf.setLineWidth(.2); pdf.line(M,H-14,W-M,H-14);
-    pdf.setFont("helvetica","normal"); pdf.setFontSize(7.5); pdf.setTextColor(...MUT); pdf.text("SIKORSKY S-62 · ZS-HCW · RELEVAMIENTO DEL ESTADO",M,H-9); pdf.text(`Hoja ${p} de ${N}`,W-M,H-9,{align:"right"}); }
+  for(let p=2;p<=N;p++){ pdf.setPage(p); pdf.setDrawColor(...CL); pdf.setLineWidth(.4); pdf.line(M,H-12,W-M,H-12);
+    font("normal",8.5,GRIS); spaced("RELEVAMIENTO DEL ESTADO · ZS-HCW · EET N.º 7 TALLER REGIONAL QUILMES",M,H-7.5,.35); pdf.text(String(p),W-M,H-7.5,{align:"right"}); }
   return pdf.output("blob");
 }
 $("rv-pdf").addEventListener("click",async()=>{
