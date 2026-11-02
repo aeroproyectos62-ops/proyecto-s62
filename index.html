@@ -199,6 +199,17 @@ label.photo-add b{font-family:var(--display);font-size:1.6rem;line-height:1;colo
 .steps input{width:20px;height:20px;flex:none;accent-color:var(--accent);margin-top:1px;padding:0}
 .deps{display:flex;flex-wrap:wrap;gap:6px}
 .deps button{padding:3px 10px;font-size:.85rem}
+/* Relevamiento */
+.rvzone{display:flex;flex-direction:column}
+.rvzone h3{padding:14px 0 6px;border-bottom:2px solid var(--ink);color:var(--ink)}
+.rvrow{display:grid;grid-template-columns:1fr auto;gap:4px 10px;align-items:center;padding:10px 0;border:0;border-bottom:1px solid var(--line);background:transparent;border-radius:0;text-align:left;font-weight:400;width:100%;min-width:0}
+.rvrow:hover{background:var(--surface-2)}
+.rvrow b{font-weight:600}
+.rvrow .rvsub{grid-column:1/-1;font-size:.85rem;color:var(--muted);overflow-wrap:anywhere}
+.c-bueno{color:var(--ok);background:var(--ok-bg)} .c-regular{color:var(--pend);background:var(--pend-bg)} .c-malo{color:var(--stop);background:var(--stop-bg)}
+.c-falta{color:var(--surface);background:var(--muted)} .c-sinrel{color:var(--muted);background:var(--surface-2)}
+.rvbar{height:8px;border-radius:4px;background:var(--surface-2);overflow:hidden;display:flex}
+.rvbar i{display:block;height:100%}
 @media (max-width:480px){.entry{grid-template-columns:1fr}.reg{font-size:2.1rem}}
 @media (prefers-reduced-motion:no-preference){button,.tile,.sysc{transition:border-color .15s,opacity .15s}}
 </style>
@@ -256,6 +267,7 @@ label.photo-add b{font-family:var(--display);font-size:1.6rem;line-height:1;colo
       <button type="button" class="tile" data-go="tareas"><b>Tareas</b><span id="tile-tareas">Cronograma de marzo a noviembre de 2027.</span></button>
       <button type="button" class="tile" data-go="bitacora"><b>Calendario</b><span>Lo cargado día por día, con fotos.</span></button>
       <button type="button" class="tile" data-go="sistemas"><b>Por sistema</b><span>Registros agrupados por zona del helicóptero.</span></button>
+      <button type="button" class="tile" data-go="relev"><b>Relevamiento</b><span id="tile-relev">Estado de cada parte, con fotos y comentario.</span></button>
       <button type="button" class="tile" data-go="descargar"><b>Descargar carpeta</b><span>PDF, fotos originales y planilla en un ZIP.</span></button>
       <button type="button" class="tile staff-only" data-go="alumnos"><b>Alumnos y docentes</b><span id="tile-alumnos">Aceptar pedidos y ver quién cargó.</span></button>
     </div>
@@ -392,6 +404,54 @@ label.photo-add b{font-family:var(--display);font-size:1.6rem;line-height:1;colo
         <div class="row"><button type="button" class="primary" id="dl-btn">Descargar ZIP</button><button type="button" id="dl-pdf">Solo el PDF</button><span id="dl-msg" class="msg"></span></div>
         <div class="note">Necesita conexión: las fotos se bajan de Google Drive. Con muchas fotos puede tardar unos minutos.</div>
       </div>
+    </div>
+
+    <!-- Relevamiento del estado de cada parte -->
+    <div data-sub="relev" class="stack" hidden>
+      <div class="panel">
+        <div class="row" style="justify-content:space-between"><h2>Relevamiento del estado</h2><span id="rv-count" class="small mono"></span></div>
+        <div class="rvbar" id="rv-bar"></div>
+        <div class="legend"><span><i style="background:var(--ok)"></i>Bueno</span><span><i style="background:var(--pend)"></i>Regular</span><span><i style="background:var(--stop)"></i>Malo</span><span><i style="background:var(--muted)"></i>Falta</span></div>
+        <div class="small muted">Tocá cada parte, sacale una o más fotos y contá en qué estado está y qué hay que hacer. Al final se descarga el informe con todo.</div>
+        <div class="grid2">
+          <select id="rv-fzona" aria-label="Filtrar por zona"></select>
+          <select id="rv-fest" aria-label="Filtrar por estado"><option value="">Todos los estados</option><option value="sinrel">Sin relevar</option><option value="bueno">Bueno</option><option value="regular">Regular</option><option value="malo">Malo</option><option value="falta">Falta</option></select>
+        </div>
+        <div class="row"><button type="button" class="primary" id="rv-pdf">Descargar informe (PDF)</button><span id="rv-msg" class="msg"></span></div>
+      </div>
+      <div class="panel" id="rv-list"></div>
+      <details class="panel">
+        <summary>Agregar una parte que no está en la lista</summary>
+        <form id="rv-add" class="grid2" style="margin-top:10px">
+          <div class="field"><label for="rv-add-zona">Zona</label><select id="rv-add-zona"></select></div>
+          <div class="field"><label for="rv-add-name">Parte</label><input id="rv-add-name" placeholder="Ej.: Bisagra de la puerta de carga"></div>
+          <div class="row" style="grid-column:1/-1"><button type="submit">Agregar</button><span id="rv-add-msg" class="msg"></span></div>
+        </form>
+      </details>
+    </div>
+
+    <!-- Ficha de una parte -->
+    <div data-sub="parte" class="stack" hidden>
+      <a href="#" class="back" id="rv-back">← Volver al relevamiento</a>
+      <form id="rv-form" class="panel" novalidate>
+        <div><span id="rv-zona" class="lbl"></span><h2 id="rv-name"></h2></div>
+        <div class="field"><span class="lbl">Estado *</span>
+          <div class="tabs" id="rv-est">
+            <button type="button" data-e="bueno" aria-pressed="false">Bueno</button>
+            <button type="button" data-e="regular" aria-pressed="false">Regular</button>
+            <button type="button" data-e="malo" aria-pressed="false">Malo</button>
+            <button type="button" data-e="falta" aria-pressed="false">Falta</button>
+          </div>
+        </div>
+        <div class="grid2">
+          <div class="field"><label for="rv-acc">Qué hay que hacer</label><select id="rv-acc"></select></div>
+          <div class="field"><label for="rv-prio">Prioridad</label><select id="rv-prio"><option value="">Sin definir</option><option value="alta">Alta</option><option value="media">Media</option><option value="baja">Baja</option></select></div>
+        </div>
+        <div class="field"><label for="rv-com">Comentario *</label><textarea id="rv-com" placeholder="Qué se ve, medidas, daños, qué falta y cualquier dato útil para repararla."></textarea></div>
+        <div class="field"><span class="lbl">Fotos *</span><div class="photos" id="rv-photos"></div></div>
+        <div id="rv-meta" class="small muted"></div>
+        <div class="row"><button class="primary" type="submit" id="rv-save">Guardar</button><span id="rv-fmsg" class="msg"></span></div>
+      </form>
     </div>
 
     <!-- Alumnos (docente) -->
@@ -655,6 +715,9 @@ function start(role,name){
   S.unsubs.push(onSnapshot(collection(fs,"tareas"),snap=>{
     S.tstate=Object.fromEntries(snap.docs.map(d=>[d.id,d.data()])); renderTasks(); if(S.task && !$("task-card").closest("[hidden]")) openTask(S.task,true);
   },()=>{}));
+  S.unsubs.push(onSnapshot(collection(fs,"relevamiento"),snap=>{
+    S.relev=Object.fromEntries(snap.docs.map(d=>[d.id,{id:d.id,...d.data()}])); renderRelev();
+  },()=>{}));
   if(role==="docente"){
     S.unsubs.push(onSnapshot(collection(fs,"usuarios"),snap=>{ S.people=snap.docs.map(d=>({id:d.id,...d.data()})); renderPeople(); },()=>{}));
     S.unsubs.push(onSnapshot(collection(fs,"docentes"),snap=>{ S.docentes=snap.docs.map(d=>({id:d.id,...d.data()})); renderDocentes(); },()=>{}));
@@ -662,7 +725,7 @@ function start(role,name){
   }
   renderAll(); processQueue();
 }
-function stop(){ S.unsubs.forEach(f=>f()); S.unsubs=[]; S.role=null; S.entries=[]; S.tstate={}; S.people=[]; document.body.classList.remove("role-docente"); }
+function stop(){ S.unsubs.forEach(f=>f()); S.unsubs=[]; S.role=null; S.entries=[]; S.tstate={}; S.people=[]; S.relev={}; document.body.classList.remove("role-docente"); }
 function showBanner(t){ const b=$("banner"); b.hidden=!t; b.textContent=t||""; }
 
 /* ---------- Navegación ---------- */
@@ -731,8 +794,8 @@ async function processQueue(){
       const r=await fetch(CFG.fotosScript,{method:"POST",body:JSON.stringify({accion:"subir",idToken:await auth.currentUser.getIdToken(),
         registroId:it.reg,sistema:it.sistema,nombre:it.nombre,data:await b64(it.blob)})}).then(x=>x.json());
       if(!r.ok) throw new Error(r.error||"error");
-      // Reemplaza la foto local por la de Drive en el registro
-      const ref=doc(fs,"registros/"+it.reg), snap=await getDoc(ref);
+      // Reemplaza la foto local por la de Drive en el registro o la parte relevada
+      const ref=doc(fs,it.path||"registros/"+it.reg), snap=await getDoc(ref);
       if(snap.exists()){ const fotos=(snap.data().fotos||[]).map(f=>f.k===k?{id:r.id,tag:f.tag,w:f.w,h:f.h}:f); await updateDoc(ref,{fotos}); }
       await IDB.del(k);
     }
@@ -1004,6 +1067,186 @@ document.querySelector('[data-sub="alumnos"]').addEventListener("click",e=>{
     deleteDoc(doc(fs,"docentes/"+id)).catch(()=>{}); return; }
   const b=e.target.closest("[data-ok],[data-no]"); if(!b) return; b.disabled=true;
   updateDoc(doc(fs,"usuarios/"+(b.dataset.ok||b.dataset.no)),{estado:b.dataset.ok?"aprobado":"rechazado",revisado:now(),revisadoPor:S.name}).catch(()=>{ b.disabled=false; });
+});
+
+/* ---------- Relevamiento del estado de cada parte ---------- */
+const RV_EST = {bueno:"Bueno",regular:"Regular",malo:"Malo",falta:"Falta"};
+const RV_ACC = ["Nada","Limpiar","Reparar","Reemplazar","Rehacer","Conseguir o fabricar","Revisar más a fondo","Retirar"];
+const RV_PRIO = {alta:"Alta",media:"Media",baja:"Baja"};
+const RV_PARTES = {
+  "Cabina de pilotos":["Parabrisas izquierdo","Parabrisas derecho","Ventanillas laterales de pilotos","Puertas o aberturas de pilotos","Hueco del panel de instrumentos","Consola central","Cíclico","Colectivo","Pedales","Columna de varillas de mando","Estante de radios","Piso de cabina de pilotos","Techo de cabina de pilotos"],
+  "Cabina de pasajeros":["Puerta de carga","Ventanillas de pasajeros","Piso de cabina de pasajeros","Paredes y revestimientos","Techo de cabina de pasajeros","Rieles de asientos","Sentina (bajo el piso)"],
+  "Fuselaje exterior":["Nariz","Lateral izquierdo","Lateral derecho","Techo y carenados de motor","Casco inferior","Cono de cola","Deriva y pilón de cola","Estabilizador horizontal","Sponson izquierdo","Sponson derecho"],
+  "Tren de aterrizaje":["Tren principal izquierdo","Tren principal derecho","Rueda de cola"],
+  "Rotores y mecánica":["Cabeza del rotor principal","Palas del rotor principal","Transmisión principal","Eje del rotor de cola","Rotor de cola","Turbina y tomas de aire","Escape"],
+  "Instalaciones":["Instalación eléctrica","Cañerías y conductos","Pitot y antenas","Luces exteriores"]
+};
+const RV_ZONAS = Object.keys(RV_PARTES);
+S.relev={}; S.rvPhotos=[]; S.rvPart=null; S.rvEst="";
+const rvId = (z,p) => slug(z)+"--"+slug(p);
+function rvParts(){
+  const list=[]; RV_ZONAS.forEach(z=>RV_PARTES[z].forEach(p=>list.push({id:rvId(z,p),zona:z,parte:p})));
+  Object.values(S.relev).forEach(r=>{ if(!list.some(x=>x.id===r.id)) list.push({id:r.id,zona:r.zona,parte:r.parte,extra:true}); });
+  return list.map(x=>({...x,...(S.relev[x.id]||{})}));
+}
+$("rv-fzona").innerHTML=`<option value="">Todas las zonas</option>`+RV_ZONAS.map(z=>`<option>${esc(z)}</option>`).join("");
+$("rv-add-zona").innerHTML=RV_ZONAS.map(z=>`<option>${esc(z)}</option>`).join("");
+$("rv-acc").innerHTML=`<option value="">Elegí una</option>`+RV_ACC.map(a=>`<option>${esc(a)}</option>`).join("");
+$("rv-fzona").addEventListener("change",renderRelev); $("rv-fest").addEventListener("change",renderRelev);
+function renderRelev(){
+  const all=rvParts(), done=all.filter(x=>x.estado), c=k=>done.filter(x=>x.estado===k).length, n=all.length;
+  $("rv-count").textContent=`${done.length} de ${n} partes relevadas`;
+  $("tile-relev").textContent = done.length ? `${done.length} de ${n} partes relevadas · ${c("malo")+c("falta")} para resolver.` : "Estado de cada parte, con fotos y comentario.";
+  $("rv-bar").innerHTML=[["bueno","--ok"],["regular","--pend"],["malo","--stop"],["falta","--muted"]].map(([k,v])=>`<i style="width:${c(k)/n*100}%;background:var(${v})"></i>`).join("");
+  const fz=$("rv-fzona").value, fe=$("rv-fest").value;
+  const L=all.filter(x=>(!fz||x.zona===fz)&&(!fe||(fe==="sinrel"?!x.estado:x.estado===fe)));
+  $("rv-list").innerHTML = L.length ? RV_ZONAS.filter(z=>L.some(x=>x.zona===z)).map(z=>`<div class="rvzone"><h3>${esc(z)}</h3>${L.filter(x=>x.zona===z).map(x=>`
+    <button type="button" class="rvrow" data-part="${esc(x.id)}"><b>${esc(x.parte)}</b>${x.estado?`<span class="chip c-${esc(x.estado)}">${RV_EST[x.estado]}</span>`:`<span class="chip c-sinrel">Sin relevar</span>`}
+    ${x.estado?`<span class="rvsub">${x.accion&&x.accion!=="Nada"?esc(x.accion)+(x.prioridad?` · prioridad ${RV_PRIO[x.prioridad].toLowerCase()}`:"")+" · ":""}${(x.fotos||[]).length} foto${(x.fotos||[]).length===1?"":"s"} · ${esc(x.autor||"")}${(x.fotos||[]).some(f=>!f.id)?" · fotos esperando señal":""}</span>`:""}</button>`).join("")}</div>`).join("")
+    : `<div class="empty">Ninguna parte coincide con el filtro.</div>`;
+}
+$("rv-list").addEventListener("click",e=>{ const b=e.target.closest("[data-part]"); if(b) openPart(b.dataset.part); });
+function setRvEst(k){ S.rvEst=k; document.querySelectorAll("#rv-est button").forEach(b=>b.setAttribute("aria-pressed",String(b.dataset.e===k))); }
+$("rv-est").addEventListener("click",e=>{ const b=e.target.closest("[data-e]"); if(!b) return; setRvEst(b.dataset.e);
+  if(b.dataset.e==="bueno" && !$("rv-acc").value) $("rv-acc").value="Nada"; });
+function openPart(id){
+  const x=rvParts().find(p=>p.id===id); if(!x) return;
+  S.rvPart=x; S.rvPhotos.forEach(p=>URL.revokeObjectURL(p.url)); S.rvPhotos=[];
+  $("rv-zona").textContent=x.zona; $("rv-name").textContent=x.parte;
+  setRvEst(x.estado||""); $("rv-acc").value=x.accion||""; $("rv-prio").value=x.prioridad||""; $("rv-com").value=x.comentario||"";
+  $("rv-meta").textContent = x.actualizado ? `Último cambio: ${x.autor||""}, ${fmtDT(x.actualizado)}` : "";
+  msg("rv-fmsg",""); renderRvPhotos(); showSub("parte");
+}
+function renderRvPhotos(){
+  const saved=(S.rvPart?.fotos||[]).map(photoBox).join("");
+  $("rv-photos").innerHTML = saved + S.rvPhotos.map((p,i)=>`<div class="ph"><img src="${p.url}" alt="Foto nueva ${i+1}"><span class="cap">Nueva</span>
+    <button type="button" class="x" data-rvdel="${i}" aria-label="Quitar foto nueva ${i+1}">✕</button></div>`).join("")
+    + `<label class="photo-add"><b>+</b>Sacar o elegir foto<input id="rv-file" type="file" accept="image/*" multiple></label>`;
+}
+$("rv-photos").addEventListener("change",async e=>{
+  if(e.target.id!=="rv-file") return;
+  msg("rv-fmsg","Preparando fotos…");
+  for(const f of [...e.target.files]){ try{ const r=await shrink(f); S.rvPhotos.push({...r,url:URL.createObjectURL(r.blob)}); }catch(_){ msg("rv-fmsg","Una foto no se pudo leer.","err"); } }
+  if($("rv-fmsg").textContent==="Preparando fotos…") msg("rv-fmsg","");
+  renderRvPhotos();
+});
+$("rv-photos").addEventListener("click",e=>{ const b=e.target.closest("[data-rvdel]"); if(b){ e.preventDefault(); S.rvPhotos.splice(+b.dataset.rvdel,1); renderRvPhotos(); } });
+$("rv-back").addEventListener("click",e=>{ e.preventDefault(); showSub("relev"); });
+$("rv-form").addEventListener("submit",async e=>{
+  e.preventDefault();
+  const x=S.rvPart; if(!x) return;
+  if(!S.rvEst) return msg("rv-fmsg","Elegí el estado.","err");
+  if(!$("rv-com").value.trim()) return msg("rv-fmsg","Escribí un comentario.","err");
+  if(!(x.fotos||[]).length && !S.rvPhotos.length) return msg("rv-fmsg","Agregá al menos una foto.","err");
+  const btn=$("rv-save"); btn.disabled=true;
+  try{
+    const path="relevamiento/"+x.id, fotos=[...(x.fotos||[])], base=(x.fotos||[]).length;
+    for(const [i,p] of S.rvPhotos.entries()){
+      const k=`${Date.now()}-${x.id}-${pad(base+i+1)}`;
+      await IDB.put(k,{blob:p.blob,path,reg:x.id,sistema:"Relevamiento",nombre:`${slug(x.zona)}_${slug(x.parte)}_${pad(base+i+1)}.jpg`});
+      S.local.set(k,URL.createObjectURL(p.blob)); fotos.push({k,tag:"",w:p.w,h:p.h});
+    }
+    const data={zona:x.zona,parte:x.parte,estado:S.rvEst,accion:$("rv-acc").value,prioridad:$("rv-prio").value,comentario:$("rv-com").value.trim(),
+      fotos,autor:S.name,autorId:S.uid,actualizado:now(),...(x.creado?{}:{creado:now()})};
+    setDoc(doc(fs,path),data).catch(err=>showBanner("No se pudo guardar el relevamiento: "+(err.code||err.message)));
+    S.relev[x.id]={id:x.id,...data}; S.rvPhotos=[]; renderRelev(); processQueue();
+    showSub("relev");
+    msg("rv-msg",`${x.parte}: guardado.`,"ok");
+  }catch(err){ msg("rv-fmsg","No se pudo guardar: "+(err.message||err),"err"); }
+  btn.disabled=false;
+});
+$("rv-add").addEventListener("submit",e=>{
+  e.preventDefault();
+  const z=$("rv-add-zona").value, p=$("rv-add-name").value.trim().replace(/\s+/g," ");
+  if(p.length<3) return msg("rv-add-msg","Escribí el nombre de la parte.","err");
+  const id=rvId(z,p);
+  if(rvParts().some(x=>x.id===id)) return msg("rv-add-msg","Esa parte ya está en la lista.","err");
+  $("rv-add-name").value=""; msg("rv-add-msg","");
+  S.relev[id]={id,zona:z,parte:p}; renderRelev(); openPart(id);
+});
+// Informe en PDF: portada, resumen, lista de trabajos y una ficha por parte con sus fotos
+async function buildRelevPdf(parts){
+  const {jsPDF}=window.jspdf, pdf=new jsPDF({unit:"mm",format:"a4"}), W=210, H=297, M=18;
+  const INK=[22,32,42], MUT=[90,103,117], ACC=[217,83,30];
+  const EC={bueno:[30,122,76],regular:[154,100,18],malo:[194,38,38],falta:[90,103,117]};
+  const STRIPES=[[246,195,59],[240,138,36],[216,38,46],[122,19,53]];
+  const done=parts.filter(x=>x.estado), cnt=k=>done.filter(x=>x.estado===k).length;
+  pdf.setTextColor(...MUT); pdf.setFont("helvetica","bold"); pdf.setFontSize(9); pdf.text("PROYECTO DE RESTAURACIÓN · EET N°7 TALLER REGIONAL QUILMES",M,40);
+  pdf.setTextColor(...INK); pdf.setFontSize(34); pdf.text("Relevamiento del estado",M,60); pdf.setFontSize(26); pdf.text("Sikorsky S-62A ZS-HCW",M,74);
+  pdf.setFont("helvetica","normal"); pdf.setFontSize(11); pdf.setTextColor(...MUT);
+  const autores=[...new Set(done.map(x=>x.autor).filter(Boolean))];
+  const fechas=done.map(x=>x.actualizado).filter(Boolean).sort();
+  pdf.text(`${done.length} partes relevadas de ${parts.length} · ${done.reduce((n,x)=>n+(x.fotos||[]).length,0)} fotos`,M,88);
+  if(fechas.length) pdf.text(`Del ${new Date(fechas[0]).toLocaleDateString("es-AR")} al ${new Date(fechas[fechas.length-1]).toLocaleDateString("es-AR")}`,M,95);
+  if(autores.length) pdf.text(pdf.splitTextToSize("Relevó: "+autores.join(", "),W-2*M),M,102);
+  let y=122;
+  [["bueno","Bueno"],["regular","Regular"],["malo","Malo"],["falta","Falta"]].forEach(([k,l],i)=>{ const x=M+i*42;
+    pdf.setFillColor(...EC[k]); pdf.rect(x,y,38,18,"F"); pdf.setTextColor(255,255,255); pdf.setFont("helvetica","bold"); pdf.setFontSize(18); pdf.text(String(cnt(k)),x+4,y+9); pdf.setFontSize(9); pdf.text(l.toUpperCase(),x+4,y+15); });
+  STRIPES.forEach((c,i)=>{ pdf.setFillColor(...c); pdf.rect(0,H-28+i*7,W,7,"F"); });
+  // Lista de trabajos: lo que no está bueno, por prioridad
+  const order={alta:0,media:1,baja:2,"":3}, todo=done.filter(x=>x.estado!=="bueno"||(x.accion&&x.accion!=="Nada"))
+    .sort((a,b)=>(order[a.prioridad||""]-order[b.prioridad||""])||RV_ZONAS.indexOf(a.zona)-RV_ZONAS.indexOf(b.zona));
+  pdf.addPage(); y=24;
+  pdf.setFont("helvetica","bold"); pdf.setFontSize(20); pdf.setTextColor(...INK); pdf.text("Qué hay que hacer",M,y); y+=10;
+  pdf.setFont("helvetica","normal"); pdf.setFontSize(9); pdf.setTextColor(...MUT); pdf.text("Partes en estado regular, malo o faltantes, y las que tienen una acción indicada, ordenadas por prioridad.",M,y); y+=8;
+  const cols=[M,M+52,M+92,M+114,M+148];
+  const head=()=>{ pdf.setFont("helvetica","bold"); pdf.setFontSize(8); pdf.setTextColor(...MUT); ["PARTE","ZONA","ESTADO","ACCIÓN","PRIORIDAD"].forEach((t,i)=>pdf.text(t,cols[i],y)); y+=2; pdf.setDrawColor(...INK); pdf.setLineWidth(.4); pdf.line(M,y,W-M,y); y+=5; };
+  head();
+  if(!todo.length){ pdf.setFont("helvetica","normal"); pdf.setFontSize(10); pdf.setTextColor(...INK); pdf.text("No hay trabajos pendientes en lo relevado.",M,y); }
+  todo.forEach(x=>{
+    if(y>H-24){ pdf.addPage(); y=24; head(); }
+    pdf.setFont("helvetica","normal"); pdf.setFontSize(9); pdf.setTextColor(...INK);
+    const pl=pdf.splitTextToSize(x.parte,50), zl=pdf.splitTextToSize(x.zona,38);
+    pdf.text(pl,cols[0],y); pdf.setTextColor(...MUT); pdf.text(zl,cols[1],y);
+    pdf.setTextColor(...EC[x.estado]); pdf.setFont("helvetica","bold"); pdf.text(RV_EST[x.estado],cols[2],y);
+    pdf.setTextColor(...INK); pdf.setFont("helvetica","normal"); pdf.text(pdf.splitTextToSize(x.accion||"–",32),cols[3],y); pdf.text(x.prioridad?RV_PRIO[x.prioridad]:"–",cols[4],y);
+    y+=Math.max(pl.length,zl.length)*4+3; pdf.setDrawColor(210,217,224); pdf.setLineWidth(.2); pdf.line(M,y-2,W-M,y-2); y+=2;
+  });
+  // Una ficha por parte, agrupadas por zona
+  const sorted=[...done].sort((a,b)=>RV_ZONAS.indexOf(a.zona)-RV_ZONAS.indexOf(b.zona));
+  for(const x of sorted){
+    pdf.addPage();
+    pdf.setFont("helvetica","bold"); pdf.setFontSize(13); pdf.setTextColor(...INK); pdf.text("Relevamiento · ZS-HCW",M,16);
+    pdf.setFont("helvetica","normal"); pdf.setFontSize(8); pdf.setTextColor(...MUT); pdf.text(x.zona,W-M,14,{align:"right"});
+    pdf.setDrawColor(...ACC); pdf.setLineWidth(.8); pdf.line(M,19,W-M,19);
+    y=30; pdf.setFont("helvetica","bold"); pdf.setFontSize(16); pdf.setTextColor(...INK);
+    const tl=pdf.splitTextToSize(x.parte,W-2*M-40); pdf.text(tl,M,y);
+    pdf.setFillColor(...EC[x.estado]); pdf.rect(W-M-34,y-6,34,9,"F"); pdf.setTextColor(255,255,255); pdf.setFontSize(10); pdf.text(RV_EST[x.estado].toUpperCase(),W-M-17,y,{align:"center"});
+    y+=tl.length*7+2;
+    [["Qué hay que hacer",x.accion||"–"],["Prioridad",x.prioridad?RV_PRIO[x.prioridad]:"–"],["Relevó",`${x.autor||""}${x.actualizado?", "+new Date(x.actualizado).toLocaleDateString("es-AR"):""}`]].forEach(([k,v],i)=>{
+      const xx=M+i*((W-2*M)/3); pdf.setFont("helvetica","bold"); pdf.setFontSize(9.5); pdf.setTextColor(...INK); pdf.text(pdf.splitTextToSize(v,(W-2*M)/3-3)[0],xx,y);
+      pdf.setFont("helvetica","normal"); pdf.setFontSize(7.5); pdf.setTextColor(...MUT); pdf.text(k,xx,y+3.5); });
+    y+=12; pdf.setFont("helvetica","normal"); pdf.setFontSize(10.5); pdf.setTextColor(...INK);
+    const body=pdf.splitTextToSize(x.comentario||"",W-2*M); pdf.text(body,M,y); y+=body.length*5+4;
+    const cw=(W-2*M-6)/2;
+    for(const [i,f] of (x.fotos||[]).entries()){
+      if(!f._b64) continue;
+      const ratio=(f.h&&f.w)?f.h/f.w:.75, ch=Math.min(cw*ratio,95);
+      if(i%2===0 && y+ch>H-20){ pdf.addPage(); y=24; }
+      pdf.addImage("data:image/jpeg;base64,"+f._b64,"JPEG",M+(i%2)*(cw+6),y,Math.min(cw,ch/ratio),ch,undefined,"FAST");
+      if(i%2===1 || i===x.fotos.length-1) y+=ch+5;
+    }
+  }
+  const N=pdf.getNumberOfPages();
+  for(let p=2;p<=N;p++){ pdf.setPage(p); pdf.setDrawColor(210,217,224); pdf.setLineWidth(.2); pdf.line(M,H-14,W-M,H-14);
+    pdf.setFont("helvetica","normal"); pdf.setFontSize(7.5); pdf.setTextColor(...MUT); pdf.text("SIKORSKY S-62 · ZS-HCW · RELEVAMIENTO DEL ESTADO",M,H-9); pdf.text(`Hoja ${p} de ${N}`,W-M,H-9,{align:"right"}); }
+  return pdf.output("blob");
+}
+$("rv-pdf").addEventListener("click",async()=>{
+  const parts=rvParts();
+  if(!parts.some(x=>x.estado)) return msg("rv-msg","Todavía no hay partes relevadas.","err");
+  if(!CFG.fotosScript) return msg("rv-msg","Falta configurar el script de fotos en config.js.","err");
+  if(!navigator.onLine) return msg("rv-msg","Necesitás conexión para bajar las fotos.","err");
+  const b=$("rv-pdf"); b.disabled=true;
+  try{
+    const token=await auth.currentUser.getIdToken(), copies=parts.map(x=>({...x,fotos:(x.fotos||[]).map(f=>({...f}))}));
+    const queue=copies.flatMap(x=>x.estado?x.fotos.filter(f=>f.id):[]), total=queue.length; let n=0;
+    await Promise.all([0,1,2,3].map(async()=>{ while(queue.length){ const f=queue.shift(); f._b64=await fetchPhoto(f.id,token); n++; msg("rv-msg",`Bajando fotos: ${n} de ${total}…`); } }));
+    msg("rv-msg","Armando el informe…");
+    saveFile(await buildRelevPdf(copies),`Relevamiento_ZS-HCW_${ymd(new Date())}.pdf`);
+    msg("rv-msg","Listo.","ok");
+  }catch(err){ msg("rv-msg","No se pudo armar el informe: "+(err.message||err),"err"); }
+  b.disabled=false;
 });
 
 /* ---------- Descarga de la carpeta ---------- */

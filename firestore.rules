@@ -45,5 +45,10 @@ service cloud.firestore {
     match /tareas/{tarea} {
       allow read, write: if miembro();
     }
+
+    // Relevamiento del estado de cada parte del helicóptero
+    match /relevamiento/{parte} {
+      allow read, write: if miembro();
+    }
   }
 }

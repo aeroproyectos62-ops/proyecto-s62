@@ -43,6 +43,7 @@ Todo es gratis y **no pide tarjeta**: la página está en GitHub Pages, el login
 - `docentes/{correo}`: docentes agregados desde la app.
 - `usuarios/{uid}`: pedidos de acceso de los alumnos (`pendiente`, `aprobado` o `rechazado`).
 - `registros/{id}`: cada registro, con sus fotos como identificadores de archivos de Drive.
+- `relevamiento/{zona--parte}`: estado (bueno, regular, malo, falta), qué hay que hacer, prioridad, comentario y fotos de cada parte.
 - `tareas/{A..AB}`: estado, pasos tildados y grupo a cargo de cada tarea del cronograma.
 
 Las fotos quedan en Drive con permiso "cualquiera con el enlace puede ver", así la app las muestra sin pedir otro inicio de sesión. El enlace no se puede adivinar, pero quien lo tenga puede ver esa foto.
