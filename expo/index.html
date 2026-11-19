@@ -301,6 +301,14 @@ li.open .more{grid-template-rows:1fr}
 .tabs .hl{position:absolute;top:5px;bottom:5px;left:0;border-radius:999px;background:var(--chip);transition:transform .5s var(--ease),width .5s var(--ease);z-index:-1}
 @media(max-width:380px){.tabs a{min-width:54px;padding:6px 4px 5px;font-size:10px}}
 
+.btn.glass{background:rgba(255,255,255,.18);color:#fff;backdrop-filter:blur(14px);-webkit-backdrop-filter:blur(14px);border:.5px solid rgba(255,255,255,.3)}
+.pal{display:flex;flex-wrap:wrap;gap:8px;justify-content:center;margin-top:16px}
+.pal span{display:inline-flex;align-items:center;gap:7px;padding:6px 12px 6px 6px;border-radius:999px;background:var(--card);box-shadow:var(--shadow);font-size:14px;font-weight:600}
+.pal i{width:22px;height:22px;border-radius:50%;overflow:hidden;display:inline-block;box-shadow:0 0 0 .5px var(--sep)}
+.steps b{font-size:12.5px;text-transform:uppercase;letter-spacing:.06em;color:var(--naval-med)}
+.steps h3{font-size:20px;letter-spacing:-.02em;margin:2px 0 4px}
+.steps p{font-size:15px;color:var(--txt2)}
+.tabs a.sp{color:#9A7406}.tabs a.sp.on{color:var(--txt)}
 footer{padding:60px 0 calc(120px + env(safe-area-inset-bottom));color:var(--txt2);font-size:13.5px}
 footer .flagline{height:6px;border-radius:3px;background:linear-gradient(90deg,var(--celeste) 0 33.3%,#fff 33.3% 66.6%,var(--celeste) 66.6%);box-shadow:0 0 0 .5px var(--sep);margin-bottom:20px;max-width:120px}
 footer b{color:var(--txt)}
@@ -337,8 +345,9 @@ footer p{margin-bottom:8px;max-width:760px}
   <div class="in"><div class="wrap">
     <div class="kicker ld" style="color:var(--amarillo)">EET N.º 7 · Taller Regional Quilmes</div>
     <h1 class="ld">Proyecto <span>S-62</span></h1>
-    <p class="sub ld">Recuperación del helicóptero anfibio Mitsubishi S-62J de la escuela: exterior con los colores del Sea King de la Armada y cabina convertida en aula.</p>
+    <p class="sub ld">Recuperación del helicóptero de la escuela: colores Sea King y cabina convertida en aula.</p>
     <div class="regs ld"><span class="pill">JA9010</span><span class="pill"><b>ZS-HCW</b></span><span class="pill">N6960R</span></div>
+    <div class="ld" style="display:flex;gap:10px;margin-top:22px;flex-wrap:wrap"><a class="btn y" href="#sponsors" style="text-decoration:none">Quiero ser sponsor</a><a class="btn glass" href="#materiales" style="text-decoration:none">Qué necesitamos</a></div>
   </div></div>
   <div class="scrollhint" aria-hidden="true"></div>
 </div>
@@ -353,154 +362,97 @@ footer p{margin-bottom:8px;max-width:760px}
 
   <!-- HISTORIA -->
   <section id="historia">
-    <div class="sh rv"><div class="kicker">Historia</div><h2>Un helicóptero que dio la vuelta al mundo</h2>
-      <p>Es un Mitsubishi S-62J, la versión japonesa del Sikorsky S-62A. Voló en Japón, Sudáfrica y la Argentina con tres matrículas. En 1971 sufrió un accidente en el mar y fue reconstruido con partes de otro S-62. Al dejar de volar fue donado a la ENET como material didáctico.</p></div>
-
+    <div class="sh rv"><div class="kicker">Historia</div><h2>Tres países, tres matrículas</h2>
+      <p>Mitsubishi S-62J, versión japonesa del Sikorsky S-62A. Helicóptero anfibio con turbina.</p></div>
     <div class="rail" id="railEtapas">
       <article class="card etapa rv">
         <div class="img"><img src="img/hh_agua.jpg" alt="HH-52A posado en el agua" loading="lazy"></div>
-        <div class="pad"><div class="c"><svg class="mini-flag"><use href="#flag-jp"/></svg>Japón · 1963–1969 · JA9010</div>
-          <h3>Armado bajo licencia</h3>
-          <p>Mitsubishi lo armó con el kit Sikorsky 62-019 (serie M62-003). Entregado el 10 de mayo de 1963 a Asahi Helicopters, empresa de trabajos aéreos. <span class="tag ge">Foto: gemelo HH-52A</span></p></div>
+        <div class="pad"><div class="c"><svg class="mini-flag"><use href="#flag-jp"/></svg>Japón · 1963 · JA9010</div>
+          <h3>Armado bajo licencia</h3><p>Entregado a Asahi Helicopters. <span class="tag ge">Foto: gemelo HH-52A</span></p></div>
       </article>
       <article class="card etapa rv">
         <div class="img"><img src="img/court_perfil.jpg" alt="Ilustración del ZS-HCW con colores de Court" loading="lazy" style="object-fit:contain;background:#fff"></div>
-        <div class="pad"><div class="c"><svg class="mini-flag"><use href="#flag-za"/></svg>Sudáfrica · 1969–1983 · ZS-HCW</div>
-          <h3>Ciudad del Cabo</h3>
-          <p>Comprado por Autair y arrendado a Court Helicopters. Accidente en Table Bay en 1971; reconstruido en 1975–76 con partes del ZS-HDJ. <span class="tag nu">Nuestro · dibujo de C. A. García</span></p></div>
+        <div class="pad"><div class="c"><svg class="mini-flag"><use href="#flag-za"/></svg>Sudáfrica · 1969 · ZS-HCW</div>
+          <h3>Ciudad del Cabo</h3><p>Accidente en el mar en 1971, reconstruido con partes de otro S-62. <span class="tag nu">Nuestro · dibujo</span></p></div>
       </article>
       <article class="card etapa rv">
         <div class="img"><img src="img/hoy_predio.jpg" alt="El S-62 en el predio de la escuela con el H-19 atrás" loading="lazy"></div>
-        <div class="pad"><div class="c"><svg class="mini-flag"><use href="#flag"/></svg>Argentina · desde 1983 · N6960R</div>
-          <h3>Del mar a la escuela</h3>
-          <p>Helicópteros Marinos S.A. lo usó para la industria petrolera. Después fue donado a la ENET y hoy está junto al Sikorsky H-19 y el Gloster Meteor. <span class="tag nu">Nuestro · foto C. Abella</span></p></div>
+        <div class="pad"><div class="c"><svg class="mini-flag"><use href="#flag"/></svg>Argentina · 1983 · N6960R</div>
+          <h3>Del mar a la escuela</h3><p>Helicópteros Marinos S.A., industria petrolera. Luego donado a la ENET. <span class="tag nu">Nuestro</span></p></div>
       </article>
     </div>
     <div class="dots" id="dotsEtapas"><i class="on"></i><i></i><i></i></div>
-
-    <div class="grid g2" style="margin-top:28px">
-      <div class="rv">
-        <div class="kicker" style="margin:0 4px 10px">Línea de tiempo</div>
-        <div class="tl" id="tl"></div>
-      </div>
-      <div>
-        <div class="kicker rv" style="margin:0 4px 10px">Ficha</div>
-        <div class="card rv"><ul class="facts">
-          <li><span>Modelo</span><span>Mitsubishi S-62J</span></li>
-          <li><span>Base</span><span>Sikorsky S-62A, bajo licencia</span></li>
-          <li><span>N.º de serie</span><span>M62-003 (kit 62-019)</span></li>
-          <li><span>Motor</span><span>Turbina General Electric T58</span></li>
-          <li><span>Tipo</span><span>Anfibio: casco de bote y sponsons</span></li>
-          <li><span>Cabina de carga</span><span>4,3 × 1,6 × 1,8 m</span></li>
-          <li><span>Capacidad (HH-52A)</span><span>10 asientos o 6 camillas</span></li>
-          <li><span>Peso máximo (HH-52A)</span><span>3.765 kg</span></li>
-        </ul></div>
-        <div class="card pad rv" style="margin-top:14px">
-          <div class="kicker">El modelo</div>
-          <p style="margin-top:6px;font-size:15.5px">El S-62 fue de los primeros helicópteros con turbina en lugar de motor a pistón. Su casco estanco y los sponsons le permiten posarse en el agua. La Guardia Costera de los EE.&nbsp;UU. usó la versión militar, el <b>HH-52A Seaguard</b>, entre 1963 y fines de los 80, con más de 15.000 personas rescatadas.</p>
-        </div>
-      </div>
-    </div>
   </section>
 
   <!-- TRABAJO -->
   <section id="trabajo">
     <div class="sh rv"><div class="kicker">El trabajo</div><h2>Del blanco gastado al gris naval</h2>
-      <p>Dos objetivos: pintar el exterior con el esquema del Sea King de la Armada Argentina y dejar la cabina vacía, tratada y pintada, lista para convertirse en aula de prácticas.</p></div>
+      <p>Exterior con el esquema del Sea King de la Armada y cabina vacía y pintada, lista para ser aula.</p></div>
 
     <div class="segwrap rv"><div class="seg" id="segCmp"><span class="th"></span><button class="on" data-i="0">Hoy</button><button data-i="1">Objetivo 2027</button><button data-i="2">Referencia</button></div></div>
     <div class="compare rv" id="cmp">
       <img src="img/hoy_exterior.jpg" alt="Estado actual del exterior">
       <img src="img/objetivo.jpg" class="off" alt="Imagen IA del objetivo">
       <img src="img/seaking.jpg" class="off" alt="Sea King 2-H-245 de la Armada Argentina">
-      <div class="cap" id="cmpCap"><span class="tag nu">Nuestro</span><span>Pintura blanca y azul gastada, octubre de 2026.</span></div>
+      <div class="cap" id="cmpCap"><span class="tag nu">Nuestro</span><span>Estado actual.</span></div>
     </div>
 
-    <div class="kicker rv" style="margin:30px 4px 12px">Esquema Sea King</div>
-    <div class="sw">
-      <div class="swc rv"><div class="chipc" style="background:#5E6872"></div><div class="tx"><b>Gris naval</b><span>Fuselaje, cola y sponsons</span></div></div>
-      <div class="swc rv"><div class="chipc" style="background:#F2C230"></div><div class="tx"><b>Amarillo</b><span>Marcos de ventanas, borde de sponsons, punta de cola</span></div></div>
-      <div class="swc rv"><div class="chipc" style="background:#1C1F22"></div><div class="tx"><b>Negro</b><span>Nariz</span></div></div>
-      <div class="swc rv"><div class="chipc"><svg class="flagsvg" viewBox="0 0 30 20" preserveAspectRatio="xMidYMid slice"><use href="#flag"/></svg></div><div class="tx"><b>Bandera</b><span>Detrás de la cabina de pilotos</span></div></div>
-      <div class="swc rv"><div class="chipc" style="background:#5E6872;display:grid;place-items:center;color:#fff;font:800 26px/1 Inter,sans-serif;letter-spacing:.04em">ZS-HCW</div><div class="tx"><b>Matrícula</b><span>En blanco, en el cono de cola</span></div></div>
+    <div class="pal rv">
+      <span><i style="background:#5E6872"></i>Gris naval</span>
+      <span><i style="background:#F2C230"></i>Marcos amarillos</span>
+      <span><i style="background:#1C1F22"></i>Nariz negra</span>
+      <span><i><svg class="flagsvg" viewBox="0 0 30 20" preserveAspectRatio="xMidYMid slice"><use href="#flag"/></svg></i>Bandera</span>
+      <span><i style="background:#5E6872;color:#fff;font:800 8px/14px Inter,sans-serif;text-align:center">ZS</i>Matrícula blanca</span>
     </div>
 
-    <div class="grid g2" style="margin-top:28px">
-      <div class="card pad rv"><div class="obj">
-        <div class="ic" style="background:var(--naval)"><svg width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M19 11V5a2 2 0 0 0-2-2H5a2 2 0 0 0-2 2v6"/><path d="M3 11h18v3a7 7 0 0 1-7 7h-4a7 7 0 0 1-7-7z"/><path d="M12 11v10"/></svg></div>
-        <div><h3>Exterior</h3><p>Se prepara la pintura actual y se pinta encima. Se decapa solo donde la pintura vieja esté floja.</p>
-          <ul><li>Pruebas de adherencia, solvente y parche</li><li>Lijado general y decapado puntual</li><li>Sellado de solapes y enderezado de sponsons</li><li>Base gris naval en poliuretano, detalles amarillos, nariz, bandera y matrícula</li></ul></div>
-      </div></div>
-      <div class="card pad rv"><div class="obj">
-        <div class="ic" style="background:#C79A12"><svg width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><rect x="3" y="4" width="18" height="12" rx="2"/><path d="M8 20h8M12 16v4"/></svg></div>
-        <div><h3>Cabina</h3><p>Se vacía, se limpia la sentina, se prepara y pinta el interior. Los comandos de vuelo se conservan y se reinstalan.</p>
-          <ul><li>Registro de piezas con fotos antes de desarmar</li><li>Retiro de instalación vieja, cañerías y revestimientos</li><li>Pisos nuevos de fenólico</li><li>Paredes y techo en gris claro semimate</li></ul></div>
-      </div></div>
+    <div class="grid g3" style="margin-top:20px">
+      <div class="card pad rv steps"><b>Jun–nov 2027</b><h3>Exterior</h3><p>Lijado, sellado y pintura. Entrega prevista: 5 de noviembre de 2027.</p></div>
+      <div class="card pad rv steps"><b>Mar–oct 2027</b><h3>Cabina</h3><p>Desarme, limpieza, pisos de fenólico y pintura interior.</p></div>
+      <div class="card pad rv steps"><b>Desde 2028</b><h3>Aula</h3><p>Banco de fallas con aviónica G1000 simulada.</p></div>
     </div>
 
-    <div class="card pad rv" style="margin-top:14px"><div class="obj">
-      <div class="ic" style="background:var(--naval-osc)"><svg width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M22 12h-4l-3 9L9 3l-3 9H2"/></svg></div>
-      <div><h3>Después: aula de troubleshooting</h3><p>La cabina va a alojar un banco de práctica con aviónica tipo Garmin G1000 simulada, instalación eléctrica de 28 V con breakers como los de un avión, luces exteriores e intercomunicador. Los alumnos buscan y reparan fallas cargadas por el profesor. Se arma por etapas desde 2028.</p></div>
-    </div></div>
-
-    <div class="kicker rv" style="margin:30px 4px 12px">Cronograma</div>
-    <div class="card gantt rv" id="gantt">
-      <div class="gm"><span>Nov</span><span>Ene</span><span>Mar</span><span>Abr</span><span>May</span><span>Jun</span><span>Jul</span><span>Ago</span><span>Sep</span><span>Oct–Nov</span></div>
-    </div>
   </section>
 
   <!-- MATERIALES -->
   <section id="materiales">
-    <div class="sh rv"><div class="kicker">Materiales 2027</div><h2>Qué hace falta para chapa y pintura</h2>
-      <p>Cantidades estimadas para unos 55 a 65 m² exteriores y 20 a 25 m² interiores, con un 20 % de margen. La protección personal sale del pañol de la escuela.</p></div>
+    <div class="sh rv"><div class="kicker">Materiales 2027</div><h2>Qué necesitamos</h2>
+      <p>Para chapa y pintura, unos 85 m² en total. Tocar un material para ofrecerlo.</p></div>
     <div class="card rv"><ul class="glist" id="mat"></ul></div>
-    <p class="note rv">Las cantidades se ajustan después de las pruebas de pintura de junio de 2027.</p>
-  </section>
-
-  <!-- FOTOS -->
-  <section id="fotos">
-    <div class="sh rv"><div class="kicker">Fotos</div><h2>Cómo está y cómo era</h2>
-      <p>Hay pocas fotos de este ejemplar en servicio. Para mostrar el equipamiento se usan fotos del HH-52A, la versión militar, que tiene el mismo fuselaje.</p></div>
-    <div class="segwrap rv"><div class="seg" id="segGal"><span class="th"></span><button class="on" data-k="hoy">Hoy</button><button data-k="real">El real</button><button data-k="eq">Equipamiento</button></div></div>
-    <div class="gal" id="gal"></div>
-    <p class="note" style="display:flex;flex-wrap:wrap;gap:8px;align-items:center"><span class="tag nu">Nuestro</span>este helicóptero <span class="tag ge">Gemelo HH-52A</span>mismo modelo, otro ejemplar <span class="tag ot">Otro</span>referencia</p>
   </section>
 
   <!-- SPONSORS -->
   <section id="sponsors">
     <div class="sh rv"><div class="kicker">Sponsors</div><h2>Apoyo al proyecto</h2>
-      <p>Empresas, comercios y particulares pueden colaborar con materiales, herramientas, servicios o asesoramiento. Los datos quedan registrados para el equipo docente del proyecto, que se comunica para coordinar.</p></div>
+      <p>Materiales, herramientas, servicios o asesoramiento. El equipo docente se comunica para coordinar.</p></div>
 
     <form class="form" id="form" novalidate>
-      <div class="gt rv">Contacto</div>
       <div class="grp rv">
         <div class="fld"><label for="f-nombre">Nombre</label><input id="f-nombre" name="nombre" autocomplete="name" placeholder="Nombre y apellido" required maxlength="120"></div>
-        <div class="fld"><label for="f-org">Empresa</label><input id="f-org" name="empresa" autocomplete="organization" placeholder="Empresa u organización (opcional)" maxlength="120"></div>
-        <div class="fld"><label for="f-rubro">Rubro</label><input id="f-rubro" name="rubro" placeholder="Pinturería, ferretería, aeronáutica…" maxlength="120"></div>
-        <div class="fld"><label for="f-tel">Teléfono</label><input id="f-tel" name="telefono" type="tel" autocomplete="tel" placeholder="11 1234 5678" maxlength="40"></div>
-        <div class="fld"><label for="f-mail">Correo</label><input id="f-mail" name="email" type="email" autocomplete="email" placeholder="nombre@correo.com" maxlength="160"></div>
-        <div class="fld"><label for="f-loc">Localidad</label><input id="f-loc" name="localidad" autocomplete="address-level2" placeholder="Quilmes, Bernal…" maxlength="80"></div>
+        <div class="fld"><label for="f-org">Empresa</label><input id="f-org" name="empresa" autocomplete="organization" placeholder="Opcional" maxlength="120"></div>
+        <div class="fld"><label for="f-con">Contacto</label><input id="f-con" name="contacto" autocomplete="tel" placeholder="Teléfono o correo" required maxlength="160"></div>
       </div>
-
       <div class="gt rv">Con qué puede ayudar</div>
-      <div class="grp rv"><div class="chips" id="chips"></div></div>
-
-      <div class="gt rv">Detalle</div>
-      <div class="grp rv">
-        <div class="fld ta"><label for="f-det">Comentario</label><textarea id="f-det" name="detalle" placeholder="Qué material, cantidad, servicio o idea" maxlength="1500"></textarea></div>
-        <div class="tgl"><span>Mostrar el nombre en la lista de sponsors</span><span class="sw-i"><input type="checkbox" id="f-pub" name="publicar" checked><span></span></span></div>
+      <div class="grp rv"><div class="chips" id="chips"></div>
+        <div class="fld ta"><label for="f-det">Detalle</label><textarea id="f-det" name="detalle" placeholder="Opcional" maxlength="1500" style="min-height:60px"></textarea></div>
       </div>
       <div class="hp" aria-hidden="true"><label>No completar<input name="web" tabindex="-1" autocomplete="off"></label></div>
       <div class="err" id="ferr" role="alert"></div>
-      <div class="rv" style="display:flex;justify-content:center"><button class="btn pri" type="submit" id="fbtn" style="min-width:220px"><span class="spin"></span><span class="bl">Enviar datos</span></button></div>
-      <p class="note rv" style="text-align:center">Teléfono o correo: al menos uno de los dos. Los datos se usan solo para este proyecto.</p>
+      <div class="rv" style="display:flex;justify-content:center"><button class="btn pri" type="submit" id="fbtn" style="min-width:220px"><span class="spin"></span><span class="bl">Enviar</span></button></div>
     </form>
+  </section>
+
+  <!-- FOTOS -->
+  <section id="fotos">
+    <div class="sh rv"><div class="kicker">Fotos</div><h2>Cómo está y cómo era</h2>
+      <p>El equipamiento se muestra con fotos del HH-52A, la versión militar del mismo modelo.</p></div>
+    <div class="segwrap rv"><div class="seg" id="segGal"><span class="th"></span><button class="on" data-k="hoy">Hoy</button><button data-k="real">El real</button><button data-k="eq">Equipamiento</button></div></div>
+    <div class="gal" id="gal"></div>
   </section>
 
   <footer>
     <div class="flagline"></div>
     <p><b>Proyecto S-62 · EET N.º 7 Taller Regional Quilmes</b> (ex ENET / IMPA).</p>
-    <p>Fuentes: Helis.com (ficha M62-003 / 62-019); manual de vuelo HH-52A T.O. 1H-52A-1 y Flight Handbook CG-384-1. Fotos de terceros con fines educativos: Jorge Souto (Helis.com), Carlos Abella, Airliners.net, Carlos A. García (ilustración), Guardia Costera de los EE.&nbsp;UU., Intrepid Museum y otros museos. La imagen del objetivo fue generada con IA y no es una foto. Colores basados en el Sea King 2-H-245 de la Armada Argentina.</p>
+    <p>Fuentes: Helis.com, manuales HH-52A de la Guardia Costera de los EE.&nbsp;UU. Fotos de terceros con fines educativos (J. Souto, C. Abella, Airliners.net, C. A. García, Intrepid Museum). La imagen del objetivo es generada con IA.</p>
   </footer>
 </main>
 
@@ -509,8 +461,8 @@ footer p{margin-bottom:8px;max-width:760px}
   <a href="#historia" data-s="historia"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><circle cx="12" cy="12" r="9"/><path d="M12 7v5l3 2"/></svg>Historia</a>
   <a href="#trabajo" data-s="trabajo"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M18.4 2.6a2 2 0 0 1 3 3L12 15l-4 1 1-4z"/><path d="M4 20h7"/></svg>Trabajo</a>
   <a href="#materiales" data-s="materiales"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M21 8 12 3 3 8l9 5z"/><path d="m3 8v8l9 5 9-5V8M12 13v8"/></svg>Materiales</a>
+  <a href="#sponsors" data-s="sponsors" class="sp"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M20.8 4.6a5.5 5.5 0 0 0-7.8 0L12 5.7l-1-1.1a5.5 5.5 0 0 0-7.8 7.8l1 1L12 21l7.8-7.6 1-1a5.5 5.5 0 0 0 0-7.8z"/></svg>Sponsors</a>
   <a href="#fotos" data-s="fotos"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><rect x="3" y="5" width="18" height="15" rx="3"/><circle cx="12" cy="12.5" r="3.5"/><path d="M8 5l1.5-2h5L16 5"/></svg>Fotos</a>
-  <a href="#sponsors" data-s="sponsors"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M20.8 4.6a5.5 5.5 0 0 0-7.8 0L12 5.7l-1-1.1a5.5 5.5 0 0 0-7.8 7.8l1 1L12 21l7.8-7.6 1-1a5.5 5.5 0 0 0 0-7.8z"/></svg>Sponsors</a>
 </nav>
 
 <div class="lb" id="lb" role="dialog" aria-modal="true" aria-label="Foto ampliada">
@@ -539,19 +491,6 @@ const $ = s => document.querySelector(s), $$ = s => [...document.querySelectorAl
 const reduce = matchMedia("(prefers-reduced-motion: reduce)").matches;
 
 /* ---------- datos ---------- */
-const TIMELINE = [
-  ["1958", "", "Primer vuelo del Sikorsky S-62 en los EE. UU."],
-  ["1962–63", "", "Sikorsky envía el kit de piezas 62-019 a Mitsubishi, que lo arma en Japón."],
-  ["10/5/1963", "JA9010", "Entregado a Asahi Helicopters, Japón."],
-  ["25/11/1969", "ZS-HCW", "Vendido a Autair, Sudáfrica. Desde 1970, arrendado a Court Helicopters en Ciudad del Cabo."],
-  ["23/5/1971", "", "Accidente en Table Bay, puerto de Ciudad del Cabo."],
-  ["1975–76", "", "Reconstruido con partes del S-62A ZS-HDJ (n.º 62-006). Vuelve a volar en agosto de 1976."],
-  ["Ago 1983", "N6960R", "Helicópteros Marinos S.A., Argentina: apoyo a la industria petrolera."],
-  ["s/f", "", "Donado a la ENET y asignado al Área Material Quilmes."],
-  ["2010", "", "Primera foto conocida en la escuela."],
-  ["30/10/2026", "", "Comienzan los trabajos de recuperación.", 1],
-  ["Nov 2027", "", "Entrega prevista con los colores Sea King.", 1],
-];
 
 // [etiqueta, detalle, mes de inicio (0 = nov 2026, 9 = oct–nov 2027), duración en columnas, color]
 const GANTT = [
@@ -587,7 +526,7 @@ const MATERIALES = [
   ["marca","#C79A12","Marcas","Vinilo de corte, cinta fina, barniz PU","2 banderas · 2 matrículas","Cinta fina de 3 mm, cinta y papel de enmascarar, vinilo de corte para la bandera y la matrícula ZS-HCW, y barniz de poliuretano para protegerlos.","4 oct 2027 (semana 30)","Vinilos y cintas"],
 ];
 
-const AYUDAS = ["Pintura","Lijas y abrasivos","Removedor","Imprimación y Alodine","Sellador","Fenólico","Vinilos y cintas","Herramientas","Lugar techado o carpa","Mano de obra especializada","Asesoramiento técnico","Transporte","Aporte económico","Difusión","Otro"];
+const AYUDAS = ["Pintura","Lijas y abrasivos","Removedor","Imprimación y Alodine","Sellador","Fenólico","Vinilos y cintas","Herramientas","Carpa o lugar techado","Mano de obra","Asesoramiento","Aporte económico","Otro"];
 
 // [archivo, etiqueta, texto, grupo]
 const FOTOS = [
@@ -624,16 +563,6 @@ const FOTOS = [
 ];
 const TAGS = {nu:"Nuestro", ge:"Gemelo HH-52A", ot:"Equipo", ia:"Imagen IA"};
 
-/* ---------- línea de tiempo ---------- */
-$("#tl").innerHTML = TIMELINE.map(([d,r,t,h]) =>
-  `<div class="it rv${h?" hl":""}"><div class="card"><div class="d">${d}${r?`<span class="reg">${r}</span>`:""}</div><div class="t">${t}</div></div></div>`).join("");
-
-/* ---------- cronograma ---------- */
-$("#gantt").insertAdjacentHTML("beforeend", GANTT.map(([l,d,s,w,c]) =>
-  `<div class="gr"><div class="gl">${l}<small>${d}</small></div><div class="tr"><div class="br" style="left:${s*10}%;width:${w*10}%;background:${c}"></div></div></div>`).join("") +
-  `<div class="gnote"><span><i style="background:var(--amarillo)"></i>Entrega prevista: 5 de noviembre de 2027</span><span><i style="background:var(--chip)"></i>Receso de invierno: 19 al 30 de julio</span></div>`);
-$$("#gantt .br").forEach((b,i)=> b.style.transitionDelay = (.15 + i*.12) + "s");
-
 /* ---------- materiales ---------- */
 $("#mat").innerHTML = MATERIALES.map(([ic,col,r,m,q,d,f,chip],i) => `
   <li><button class="row" aria-expanded="false">
@@ -651,7 +580,7 @@ $$("#mat [data-chip]").forEach(b => b.addEventListener("click", () => {
   if (c && !c.classList.contains("on")) c.click();
   const det = $("#f-det"); if (!det.value.includes(b.dataset.mat)) det.value = (det.value ? det.value + "\n" : "") + b.dataset.mat + ": ";
   $("#sponsors").scrollIntoView({behavior: reduce ? "auto" : "smooth"});
-  setTimeout(() => $("#f-nombre").focus({preventScroll:true}), 900);
+  
 }));
 
 /* ---------- chips del formulario ---------- */
@@ -665,7 +594,7 @@ function seg(el, cb){
   bs.forEach(b => b.addEventListener("click", () => { if (b.classList.contains("on")) return; bs.forEach(x => x.classList.toggle("on", x===b)); place(); cb(b); }));
   addEventListener("resize", place); requestAnimationFrame(place); document.fonts && document.fonts.ready.then(place);
 }
-const CMP = [["nu","Nuestro","Pintura blanca y azul gastada, octubre de 2026."],["ia","Imagen IA","Cómo se pretende que quede. Imagen generada con IA, no es una foto."],["ot","Otro modelo","Sea King 2-H-245 de la Armada Argentina: la referencia del esquema."]];
+const CMP = [["nu","Nuestro","Estado actual."],["ia","Imagen IA","Cómo se pretende que quede."],["ot","Otro modelo","Sea King 2-H-245 de la Armada Argentina."]];
 seg($("#segCmp"), b => { const i = +b.dataset.i; $$("#cmp img").forEach((im,j) => im.classList.toggle("off", j!==i));
   const [t,l,c] = CMP[i]; $("#cmpCap").innerHTML = `<span class="tag ${t}">${l}</span><span>${c}</span>`; });
 
@@ -718,17 +647,17 @@ form.addEventListener("submit", async e => {
   e.preventDefault(); ferr.textContent = "";
   const fd = new FormData(form), v = k => String(fd.get(k) || "").trim();
   const ayuda = $$("#chips .chip.on").map(c => c.dataset.v);
-  const datos = {accion:"sponsor", nombre:v("nombre"), empresa:v("empresa"), rubro:v("rubro"), telefono:v("telefono"), email:v("email"),
-    localidad:v("localidad"), ayuda:ayuda.join(", "), detalle:v("detalle"), publicar:$("#f-pub").checked ? "sí" : "no", web:v("web")};
+  const con = v("contacto"), esMail = con.includes("@");
+  const datos = {accion:"sponsor", nombre:v("nombre"), empresa:v("empresa"), telefono:esMail ? "" : con, email:esMail ? con : "",
+    ayuda:ayuda.join(", "), detalle:v("detalle"), publicar:"", web:v("web")};
   if (!datos.nombre) { $("#f-nombre").focus(); return fail("Falta el nombre."); }
-  if (!datos.telefono && !datos.email) { $("#f-tel").focus(); return fail("Falta un teléfono o un correo de contacto."); }
-  if (datos.email && !/^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(datos.email)) { $("#f-mail").focus(); return fail("El correo no parece válido."); }
-  if (!ayuda.length && !datos.detalle) return fail("Falta indicar con qué puede ayudar.");
+  if (!con) { $("#f-con").focus(); return fail("Falta un teléfono o correo."); }
+  if (!ayuda.length && !datos.detalle) return fail("Falta elegir con qué puede ayudar.");
   fbtn.classList.add("busy"); fbtn.disabled = true;
   try {
     const r = await fetch(SCRIPT_URL, {method:"POST", body:JSON.stringify(datos)}).then(x => x.json());
     if (!r.ok) throw new Error(r.error || "error");
-    form.reset(); $$("#chips .chip.on").forEach(c => c.click()); $("#f-pub").checked = true;
+    form.reset(); $$("#chips .chip.on").forEach(c => c.click());
     openSheet();
   } catch (err) {
     const body = Object.entries(datos).filter(([k,x]) => x && k!=="accion" && k!=="web").map(([k,x]) => `${k}: ${x}`).join("\n");
@@ -759,7 +688,7 @@ rail.addEventListener("scroll", () => { const cs = [...rail.children]; const c =
 dots.forEach((d,i) => d.addEventListener("click", () => rail.children[i].scrollIntoView({behavior:"smooth", inline:"center", block:"nearest"})));
 
 // barra superior, portada con parallax y pestañas
-const nav = $("#nav"), tabs = $("#tabs"), heroPh = $("#heroPh"), hl = $("#tabHl"), secs = ["historia","trabajo","materiales","fotos","sponsors"];
+const nav = $("#nav"), tabs = $("#tabs"), heroPh = $("#heroPh"), hl = $("#tabHl"), secs = ["historia","trabajo","materiales","sponsors","fotos"];
 let ticking = false, cur = "";
 function onScroll(){
   const y = scrollY, h = innerHeight;
