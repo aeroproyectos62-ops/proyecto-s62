@@ -25,7 +25,7 @@
   --bg:#0E1113; --card:#1B2024; --card2:#232A2F; --txt:#F2F3F4; --txt2:#9AA4AC; --sep:rgba(255,255,255,.1);
   --bar:rgba(22,26,29,.72); --chip:#2A3237; --shadow:0 1px 2px rgba(0,0,0,.3),0 8px 24px rgba(0,0,0,.3); color-scheme:dark;}
 *{box-sizing:border-box;margin:0;padding:0}
-html{scroll-behavior:smooth;-webkit-text-size-adjust:100%}
+html{-webkit-text-size-adjust:100%}
 body{font-family:-apple-system,BlinkMacSystemFont,"SF Pro Text","Inter",system-ui,sans-serif;background:var(--bg);color:var(--txt);
   font-size:17px;line-height:1.47;letter-spacing:-.01em;-webkit-font-smoothing:antialiased;overflow-x:hidden}
 img{display:block;max-width:100%}
@@ -728,6 +728,18 @@ addEventListener("resize", () => { onScroll(); placeHl(); }); onScroll();
     const el = $("#vn"); el.dataset.count = r.visitas; el.textContent = r.visitas; $("#visits").hidden = false;
   } catch(_) {}
 })();
+
+// Siempre abrir desde la portada: sin #seccion en la dirección y sin recordar la posición anterior
+if ("scrollRestoration" in history) history.scrollRestoration = "manual";
+if (location.hash) history.replaceState(null, "", location.pathname + location.search);
+scrollTo(0, 0);
+addEventListener("pageshow", e => { if (e.persisted) scrollTo(0, 0); });
+// Los enlaces internos se desplazan sin cambiar la dirección
+document.addEventListener("click", e => {
+  const a = e.target.closest('a[href^="#"]'); if (!a) return;
+  const t = document.querySelector(a.getAttribute("href")); if (!t) return;
+  e.preventDefault(); t.scrollIntoView({behavior: reduce ? "auto" : "smooth"});
+});
 
 // modo claro / oscuro
 const root = document.documentElement;
