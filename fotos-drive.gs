@@ -1,7 +1,8 @@
 // Script de Google Apps Script: guarda en Google Drive las fotos que cargan los alumnos
 // y se las devuelve a la app para armar la carpeta en PDF. También avisa por mail al
 // docente cuando un alumno pide acceso, y guarda en una planilla los datos que deja la
-// gente en el formulario de sponsors de la página de la exposición (expo/).
+// gente en el formulario de sponsors de la página de la exposición (expo/) y cuenta
+// las visitas a esa página.
 // Se publica como "Aplicación web" (ejecutar como: yo; acceso: cualquier usuario) y su URL
 // se pega en config.js como fotosScript. Solo acepta pedidos de miembros del proyecto:
 // cada pedido trae el token de inicio de sesión de Firebase y se verifica acá.
@@ -17,6 +18,7 @@ function doPost(e) {
   try {
     const d = JSON.parse((e.postData && e.postData.contents) || '{}');
     if (d.accion === 'sponsor') return sponsor_(d);   // formulario público de la exposición, sin inicio de sesión
+    if (d.accion === 'visita') return visita_(d);     // contador de visitas de la página de la exposición
     if (d.accion === 'aviso') return aviso_(d, cuenta_(d.idToken));
     const user = verificar_(d.idToken);
     if (d.accion === 'subir') return subir_(d, user);
@@ -143,6 +145,20 @@ function sponsor_(d) {
     });
   } catch (_) {}   // si se terminó la cuota de mails del día, la fila igual queda guardada
   return json_({ok: true});
+}
+
+// Contador de visitas de expo/: la página manda nuevo=true la primera vez que se abre en
+// cada celular o computadora. Devuelve el total.
+function visita_(d) {
+  const props = PropertiesService.getScriptProperties();
+  if (!d.nuevo) return json_({ok: true, visitas: Number(props.getProperty('VISITAS') || 0)});
+  const lock = LockService.getScriptLock();
+  lock.waitLock(10000);
+  try {
+    const n = Number(props.getProperty('VISITAS') || 0) + 1;
+    props.setProperty('VISITAS', String(n));
+    return json_({ok: true, visitas: n});
+  } finally { lock.releaseLock(); }
 }
 
 function planillaSponsors_() {
