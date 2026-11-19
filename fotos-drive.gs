@@ -1,6 +1,7 @@
 // Script de Google Apps Script: guarda en Google Drive las fotos que cargan los alumnos
 // y se las devuelve a la app para armar la carpeta en PDF. También avisa por mail al
-// docente cuando un alumno pide acceso.
+// docente cuando un alumno pide acceso, y guarda en una planilla los datos que deja la
+// gente en el formulario de sponsors de la página de la exposición (expo/).
 // Se publica como "Aplicación web" (ejecutar como: yo; acceso: cualquier usuario) y su URL
 // se pega en config.js como fotosScript. Solo acepta pedidos de miembros del proyecto:
 // cada pedido trae el token de inicio de sesión de Firebase y se verifica acá.
@@ -15,6 +16,7 @@ const CARPETA = 'Proyecto S62 - Fotos';
 function doPost(e) {
   try {
     const d = JSON.parse((e.postData && e.postData.contents) || '{}');
+    if (d.accion === 'sponsor') return sponsor_(d);   // formulario público de la exposición, sin inicio de sesión
     if (d.accion === 'aviso') return aviso_(d, cuenta_(d.idToken));
     const user = verificar_(d.idToken);
     if (d.accion === 'subir') return subir_(d, user);
@@ -108,6 +110,54 @@ function aviso_(d, u) {
           'Para aceptarlo entrá como docente en:\n' + String(d.app || '') + '\n'
   });
   return json_({ok: true});
+}
+
+// Formulario de sponsors (expo/index.html): agrega una fila en la planilla
+// "Proyecto S62 - Sponsors" (se crea sola la primera vez) y avisa por mail a los docentes.
+const PLANILLA_SPONSORS = 'Proyecto S62 - Sponsors';
+const CAMPOS_SPONSOR = ['nombre', 'empresa', 'rubro', 'telefono', 'email', 'localidad', 'ayuda', 'detalle', 'publicar'];
+
+function sponsor_(d) {
+  if (d.web) return json_({ok: true});   // campo trampa para robots: se ignora sin avisar
+  const v = {};
+  CAMPOS_SPONSOR.forEach(k => { v[k] = String(d[k] || '').replace(/^[=+\-@]/, "'$&").slice(0, k === 'detalle' ? 1500 : 200).trim(); });
+  if (!v.nombre) throw new Error('falta el nombre');
+  if (!v.telefono && !v.email) throw new Error('falta un contacto');
+  // Límite simple contra envíos repetidos: hasta 60 por hora en total
+  const cache = CacheService.getScriptCache();
+  const n = Number(cache.get('sponsors_hora') || 0);
+  if (n >= 60) throw new Error('demasiados envíos, probar más tarde');
+  cache.put('sponsors_hora', String(n + 1), 3600);
+
+  const lock = LockService.getScriptLock();
+  lock.waitLock(20000);   // evita crear dos planillas si llegan dos envíos juntos
+  try {
+    planillaSponsors_().appendRow([new Date()].concat(CAMPOS_SPONSOR.map(k => v[k])).concat(['Nuevo']));
+  } finally { lock.releaseLock(); }
+  try {
+    MailApp.sendEmail({
+      to: DOCENTES.join(','),
+      subject: 'Proyecto S62: nuevo sponsor, ' + v.nombre + (v.empresa ? ' (' + v.empresa + ')' : ''),
+      body: CAMPOS_SPONSOR.filter(k => v[k]).map(k => k + ': ' + v[k]).join('\n') +
+            '\n\nPlanilla: ' + SpreadsheetApp.openById(PropertiesService.getScriptProperties().getProperty('SPONSORS_ID')).getUrl()
+    });
+  } catch (_) {}   // si se terminó la cuota de mails del día, la fila igual queda guardada
+  return json_({ok: true});
+}
+
+function planillaSponsors_() {
+  const props = PropertiesService.getScriptProperties();
+  const id = props.getProperty('SPONSORS_ID');
+  if (id) { try { return SpreadsheetApp.openById(id).getSheets()[0]; } catch (_) {} }
+  const ss = SpreadsheetApp.create(PLANILLA_SPONSORS);
+  const hoja = ss.getSheets()[0];
+  hoja.setName('Sponsors');
+  hoja.appendRow(['Fecha', 'Nombre', 'Empresa', 'Rubro', 'Teléfono', 'Correo', 'Localidad', 'Con qué ayuda', 'Detalle', 'Mostrar nombre', 'Estado']);
+  hoja.getRange(1, 1, 1, 11).setFontWeight('bold').setBackground('#2E353B').setFontColor('#F2C230');
+  hoja.setFrozenRows(1);
+  props.setProperty('SPONSORS_ID', ss.getId());
+  // La planilla queda en Mi unidad de la cuenta del proyecto
+  return hoja;
 }
 
 function json_(o) {
